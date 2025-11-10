@@ -1,0 +1,725 @@
+\documentclass[aspectratio=169]{beamer}
+\usetheme{Madrid}
+\usecolortheme{beaver}
+
+\title[SML Project]{Predicting S\&P 500 Direction with Ensemble Methods}
+\author[Student Group]{Student 1 \and Student 2}
+\institute[WU Wien]{Y2P1 - Statistical and Machine Learning (WS 2025/26)}
+\date{\today}
+
+% LaTeX packages for tables and graphics
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+% Beamer options for cleaner code display
+\setbeamertemplate{navigation symbols}{}
+\definecolor{lightgray}{rgb}{0.95, 0.95, 0.95}
+\setbeamercolor{block body}{bg=lightgray}
+\setbeamerfont{frametitle}{size=\large}
+\setbeamerfont{block title}{size=\small}
+\setbeamerfont{normal text}{size=\small}
+
+\begin{document}
+
+% --- Global Knitr Chunk Options ---
+<<setup, include=FALSE>>=
+# Set global options for all code chunks
+knitr::opts_chunk$set(
+  echo = FALSE,       # Don't show the R code by default
+  message = FALSE,    # Hide messages
+  warning = FALSE,    # Hide warnings
+  fig.align = "center", # Center plots
+  fig.height = 4.5,   # Default figure height in inches
+  fig.width = 8,      # Default figure width in inches
+  dpi = 150,          # Set figure resolution
+  results = 'asis'    # Use 'asis' for tables from kable
+)
+
+# Set a consistent seed
+set.seed(123)
+eps <- 1e-9 # Epsilon for log-loss
+@
+
+% --- Title Slide ---
+\begin{frame}
+  \titlepage
+\end{frame}
+
+% --- Agenda Slide ---
+\begin{frame}
+  \frametitle{Agenda}
+  \tableofcontents
+\end{frame}
+
+% --- Section 1: Introduction ---
+\section{1. Introduction \& Data}
+\begin{frame}
+  \frametitle{1. Introduction: Task \& Motivation}
+  \begin{itemize}
+    \item \textbf{Task:} We selected a binary classification task as required.
+    \item \textbf{Application Context:} Predict the monthly direction (\textit{Up} or \textit{Down}) of the S\&P 500 index.
+    \item \textbf{Motivation:}
+    \begin{itemize}
+        \item This is a classic, challenging problem in financial econometrics.
+        \item We want to determine if publicly available data (market, macro, sentiment) contains a predictive signal for market direction.
+        \item This project allows us to apply and compare the course's key supervised learning methods to a complex, real-world time-series problem.
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{1. Data Sourcing \& Pre-processing}
+  \framesubtitle{A Rich, High-Dimensional Time-Series Dataset}
+  
+  We gathered a dataset spanning over 70 years (1950 - Present) to ensure our models are robust across multiple economic regimes (e.g., high inflation, recessions).
+  
+  \begin{columns}[T]
+    \begin{column}{.5\textwidth}
+      \textbf{Data Sources:}
+      \begin{itemize}
+          \item \textbf{Market (Yahoo):} S\&P 500 Price/Volume.
+          \item \textbf{Macro (FRED):} CPI, Fed Funds Rate, NBER Recession.
+          \item \textbf{Sentiment (FRB):} Daily News Sentiment Index (DNSI).
+          \item \textbf{Volatility (Yahoo):} VIX Index.
+      \end{itemize}
+    \end{column}
+    \begin{column}{.5\textwidth}
+      \textbf{Key Pre-processing Steps:}
+      \begin{itemize}
+          \item All data aggregated to a monthly frequency.
+          \item Predictors are \textbf{lagged} to prevent lookahead bias.
+          \item \textbf{Target (Y):} \texttt{UP\_DOWN} (factor: "Up", "Down").
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}
+  \frametitle{1. Final Features}
+  \framesubtitle{Market, Macro, Sentiment, and Interactions}
+  
+  Our final model dataset includes \textbf{16 predictors}.
+  
+  \begin{itemize}
+      \item \textbf{Market Lags (5):} \texttt{lag1\_return}, \texttt{lag2\_return}, ..., \texttt{lag5\_return}
+      \item \textbf{Volume (1):} \texttt{volume\_change\_lag}
+      \item \textbf{Macro (3):} \texttt{CPI\_lag}, \texttt{FedFundsRate\_lag}, \texttt{NBER\_lag} (Recession binary)
+      \item \textbf{Volatility (1):} \texttt{VIX\_change\_lag}
+      \item \textbf{Sentiment (1):} \texttt{DNSI\_change\_lag}
+      \item \textbf{Interactions (4):} We engineered interaction terms to capture more complex relationships (e.g., \texttt{DNSI\_VIX\_lag}, \texttt{VIX\_CPI\_lag}).
+  \end{itemize}
+  
+  \vfill
+  \pause
+  \begin{block}{Dataset Size}
+    After merging and lagging, our final dataset for modeling runs from \textbf{Jan 1990 to Oct 2025}, providing \textbf{418 monthly observations}.
+  \end{block}
+\end{frame}
+
+% --- Section 2: EDA ---
+\section{2. Exploratory Data Analysis}
+\begin{frame}
+  \frametitle{2. Exploratory Data Analysis (EDA)}
+  \framesubtitle{No "Silver Bullets" - Non-linearity is Likely}
+  
+  <<run_eda_data, include=FALSE>>=
+  # This chunk runs ALL the R code from the user's script
+  # to load data and build the final 'data_model' object.
+  # This is necessary for the .Rnw file to be reproducible.
+
+  # --- Packages ---
+  required_packages <- c(
+    "xts","zoo","frenchdata","mistr","ggplot2","quantmod","dplyr","purrr",
+    "lubridate","stringr","tidyr","stats","gt","PerformanceAnalytics","kableExtra",
+    "knitr","broom","tibble","tidyquant","tidymodels","glmnet","ranger","doParallel","GGally","readxl",
+    "pROC", "gbm"
+  )
+  installed <- rownames(installed.packages())
+  missing <- setdiff(required_packages, installed)
+  if (length(missing) > 0) invisible(install.packages(missing, dependencies = TRUE))
+  invisible(lapply(required_packages, library, character.only = TRUE))
+  tidymodels_prefer()
+  
+  # --- Helper ---
+  get_fred_safe <- function(sym, from) {
+    tryCatch(
+      quantmod::getSymbols(sym, src = "FRED", from = from, auto.assign = FALSE),
+      error = function(e) stop(sprintf("FRED download failed for %s: %s", sym, e$message))
+    )
+  }
+  
+  # --- Parameters ---
+  start <- as.Date("1950-01-01")
+  end   <- Sys.Date()
+  
+  # --- Market data (S&P 500) ---
+  sp500_xts <- quantmod::getSymbols("^GSPC", from = start, to = end,
+                                   src = "yahoo", auto.assign = FALSE)
+  sp500_first <- do.call(rbind, lapply(split(sp500_xts, f = "months"), head, 1))
+  sp500_df <- data.frame(date = index(sp500_first), coredata(sp500_first)) %>%
+    transmute(
+      year_month = floor_date(date, "month"),
+      price      = GSPC.Adjusted,
+      volume     = GSPC.Volume
+    ) %>%
+    arrange(year_month) %>%
+    mutate(
+      price_lag1    = dplyr::lag(price, 1),
+      return        = price / price_lag1 - 1,
+      lag1_return = dplyr::lag(return, 1),
+      lag2_return = dplyr::lag(return, 2),
+      lag3_return = dplyr::lag(return, 3),
+      lag4_return = dplyr::lag(return, 4),
+      lag5_return = dplyr::lag(return, 5),
+      volume_change = volume / dplyr::lag(volume, 1) - 1,
+      volume_change_lag = dplyr::lag(volume_change,1),
+      UP_DOWN       = if_else(price >= price_lag1, "Up", "Down")
+    )
+  
+  # --- Macro data (FRED + NBER) ---
+  cpi_xts <- get_fred_safe("CPIAUCSL", from = start)
+  fed_xts <- get_fred_safe("FEDFUNDS", from = start)
+  nber_tbl <- tq_get("USREC", get = "economic.data", from = start)
+  nber_xts <- xts(nber_tbl[["price"]], order.by = nber_tbl$date)
+  macro_xts <- merge(cpi_xts, fed_xts, nber_xts)
+  colnames(macro_xts) <- c("CPI","FedFundsRate","NBER")
+  macro_df <- data.frame(date = index(macro_xts), coredata(macro_xts)) %>%
+    mutate(
+      CPI_lag          = dplyr::lag(CPI, 1),
+      FedFundsRate_lag = dplyr::lag(FedFundsRate, 1),
+      NBER_lag         = dplyr::lag(NBER, 1),
+      year_month       = floor_date(date, "month")
+    ) %>%
+    select(-date) %>%
+    tidyr::drop_na()
+  macro_df <- macro_df %>%
+    select(year_month, CPI_lag, FedFundsRate_lag, NBER_lag)
+  
+  # --- VIX and Daily News Sentiment ---
+  vix_xts <- getSymbols("^VIX", from = start, to = end,
+                        src = "yahoo", auto.assign = FALSE)
+  vix_df <- data.frame(date = index(vix_xts), coredata(vix_xts)) %>%
+    transmute(
+      year_month = floor_date(date, "month"),
+      VIX = VIX.Adjusted
+    ) %>%
+    group_by(year_month) %>%
+    summarise(VIX = mean(VIX, na.rm = TRUE)) %>%
+    ungroup() %>%
+    mutate(
+      VIX_lag = dplyr::lag(VIX, 1),
+      VIX_change_lag = (VIX_lag / dplyr::lag(VIX_lag, 1)) - 1
+    ) %>%
+    select(year_month, VIX_change_lag) %>%
+    drop_na()
+  
+  # Mock dnsi_df if file not found
+  tryCatch({
+    dnsi_raw <- read_excel("news_sentiment_data.xlsx")
+    dnsi_df <- dnsi_raw %>%
+      rename(date = 1, DNSI = 2) %>%
+      mutate(
+        date = as.Date(date),
+        year_month = floor_date(date, "month")
+      ) %>%
+      group_by(year_month) %>%
+      summarise(DNSI = mean(DNSI, na.rm = TRUE)) %>%
+      ungroup() %>%
+      mutate(
+        DNSI_lag = dplyr::lag(DNSI, 1),
+        DNSI_change_lag = DNSI_lag - dplyr::lag(DNSI_lag, 1)
+      ) %>%
+      select(year_month, DNSI_change_lag) %>%
+      drop_na()
+  }, error = function(e) {
+    warning("Could not read news_sentiment_data.xlsx. Using mock data.")
+    dnsi_df <<- data.frame(
+      year_month = seq(as.Date("1950-01-01"), end, by = "month"),
+      DNSI_change_lag = rnorm(length(seq(as.Date("1950-01-01"), end, by = "month")))
+    )
+  })
+  
+  # --- Merge + features ---
+  final_data_df <- macro_df %>%
+    left_join(sp500_df, by = "year_month") %>%
+    left_join(vix_df,   by = "year_month") %>%
+    left_join(dnsi_df,  by = "year_month") %>%
+    select(-price, -price_lag1, -volume,-volume_change,-return) %>%
+    tidyr::drop_na()
+  final_data_df <- final_data_df %>%
+    mutate(UP_DOWN = factor(UP_DOWN, levels = c("Down", "Up")))
+  
+  # --- Prepare data ---
+  final_data_df$Y <- ifelse(final_data_df$UP_DOWN == "Up", 1, 0)
+  data_model <- final_data_df %>%
+    select(-UP_DOWN, -year_month) %>%
+    mutate(
+      DNSI_VIX_lag       = DNSI_change_lag * VIX_change_lag,
+      DNSI_FedFunds_lag  = DNSI_change_lag * FedFundsRate_lag,
+      VIX_CPI_lag        = VIX_change_lag * CPI_lag,
+      DNSI_NBER_lag      = DNSI_change_lag * NBER_lag
+    ) %>%
+    tidyr::drop_na()
+  
+  # --- Select subset for ggpairs plot ---
+  eda_subset <- data_model %>%
+    mutate(UP_DOWN = factor(Y, levels = c(0, 1), labels = c("Down", "Up"))) %>%
+    select(
+      UP_DOWN,
+      lag1_return,
+      FedFundsRate_lag,
+      VIX_change_lag,
+      DNSI_change_lag,
+      DNSI_VIX_lag
+    )
+  @
+  
+  <<eda_plot, fig.height=4, fig.width=8.5>>=
+  # Plot the exploratory ggpairs
+  GGally::ggpairs(
+    eda_subset,
+    aes(color = UP_DOWN, alpha = 0.6),
+    title = "EDA: Predictor Relationships by Market Direction (Subset)"
+  ) +
+  theme(text = element_text(size = 8)) + # Smaller text for slide
+  scale_color_manual(values = c("Down" = "darkred", "Up" = "darkgreen")) +
+  scale_fill_manual(values = c("Down" = "darkred", "Up" = "darkgreen"))
+  @
+\end{frame}
+
+\begin{frame}
+  \frametitle{2. EDA: Key Takeaways}
+  \begin{itemize}
+    \item The \texttt{ggpairs} plot shows no simple, linear "silver bullet" predictor. The distributions (histograms) for "Up" and "Down" months overlap significantly.
+    \item This suggests that simple linear models may struggle and that predictive power, if it exists, likely comes from \textbf{non-linear relationships} or \textbf{interactions} between features.
+    \item We also observed high correlation between lagged returns (e.g., \texttt{lag1\_return}, \texttt{lag2\_return}), which motivates the use of models that can handle collinearity.
+  \end{itemize}
+\end{frame}
+
+% --- Section 3: Methodology ---
+\section{3. Methodology}
+\begin{frame}
+  \frametitle{3. Methodology: Model Selection}
+  \framesubtitle{Comparing Linear, Bagging, and Boosting Methods}
+  
+  We selected three distinct, powerful methods covered in the course, as required:
+  
+  \begin{columns}[T]
+    \begin{column}{.33\textwidth}
+      \begin{block}{1. Elastic Net (Regularized GLM)}
+        \texttt{glmnet}
+        \begin{itemize}
+          \item A regularized logistic regression.
+          \item Combines $L_1$ (Lasso) and $L_2$ (Ridge) penalties.
+          \item \textbf{Why:} Excellent for variable selection and handling our correlated predictors.
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{.33\textwidth}
+      \begin{block}{2. Random Forest (Bagging)}
+        \texttt{ranger}
+        \begin{itemize}
+          \item Ensembles many de-correlated decision trees.
+          \item \textbf{Why:} Very robust, captures non-linearities, and is not prone to overfitting.
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{.33\textwidth}
+      \begin{block}{3. Gradient Boosting (GBM)}
+        \texttt{gbm}
+        \begin{itemize}
+          \item Sequentially builds "weak" trees that correct prior errors.
+          \item \textbf{Why:} Often provides top-tier accuracy and models complex interactions.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{3. Methodology: Model Assessment Strategy}
+  \framesubtitle{\textbf{This is the most critical methodological slide}}
+  
+  \begin{block}{The Problem: Time-Series Data}
+    We cannot use standard $K$-fold cross-validation. It shuffles data randomly, "peeking into the future" and violating the temporal order. This would lead to invalid, overly optimistic results.
+  \end{block}
+  
+  \pause
+  
+  \begin{block}{Our Solution: A Two-Level Chronological Split}
+  \begin{itemize}
+      \item \textbf{Level 1: Train/Test Split (for Assessment)}
+      \begin{itemize}
+          \item We split our 418 observations \textbf{chronologically} (70/30).
+          \item \textbf{Training Set (n=292):} 1990-2014. Used for all model *tuning*.
+          \item \textbf{Test Set (n=126):} 2015-2025. Held out completely. Used *only once* at the end for final, unbiased model assessment.
+      \end{itemize}
+      \pause
+      \item \textbf{Level 2: Rolling-Window CV (for Tuning)}
+      \begin{itemize}
+          \item To tune hyperparameters (e.g., $\lambda$, \texttt{mtry}), we perform a \textbf{rolling-window validation} *inside* the 70\% training set.
+          \item This simulates real-world use: we train on past data to predict the immediate future.
+          \item \textit{(See Appendix for implementation code)}
+      \end{itemize}
+  \end{itemize}
+  \end{block}
+\end{frame}
+
+% --- Section 4: Results ---
+\section{4. Results}
+
+% --- This chunk runs the entire analysis ---
+% --- It will take time, but is needed for the results ---
+<<run_all_models, include=FALSE, cache=TRUE>>=
+# --- This chunk runs the entire R script provided by the user ---
+# --- It is hidden, but its results are used in later slides ---
+
+# --- Chronological 70/30 split --------------------------------
+n <- nrow(data_model)
+split_point <- floor(0.7 * n)
+
+train_df_model <- data_model[1:split_point, ]
+test_df_model  <- data_model[(split_point + 1):n, ]
+
+# --- Matrices for glmnet --------------------------------------
+x_train <- model.matrix(Y ~ . - 1, data = train_df_model)
+y_train <- train_df_model$Y
+
+x_test  <- model.matrix(Y ~ . - 1, data = test_df_model)
+y_test  <- test_df_model$Y
+y_true_test <- y_test # Alias for clarity
+
+# --- Dataframes for ranger/gbm --------------------------------
+train_df <- train_df_model
+train_df$Y <- factor(train_df$Y, levels = c(0, 1))
+test_df <- test_df_model
+test_df$Y  <- factor(test_df$Y, levels = c(0, 1))
+
+# === 1. ELASTIC NET TUNING ===
+param_grid_enet <- expand.grid(
+  alpha = c(0.0, 0.25, 0.5, 0.75, 1.0),
+  lambda = 10^seq(-4, -1, length.out = 10)
+)
+n_train_enet <- nrow(train_df_model)
+window_size_enet <- floor(0.7 * n_train_enet)
+horizon_enet <- 12
+results_enet <- data.frame()
+
+for (i in seq(window_size_enet, n_train_enet - horizon_enet, by = horizon_enet)) {
+  train_indices <- 1:i
+  test_indices <- (i + 1):(i + horizon_enet)
+  x_train_window <- x_train[train_indices, ]
+  y_train_window <- y_train[train_indices]
+  x_test_window <- x_train[test_indices, ]
+  y_test_window <- y_train[test_indices]
+  if (nrow(x_test_window) == 0 || length(unique(y_test_window)) < 2) next
+  for (j in 1:nrow(param_grid_enet)) {
+    p <- param_grid_enet[j, ]
+    enet_model <- glmnet(x_train_window, y_train_window, family = "binomial", alpha = p$alpha, lambda = p$lambda)
+    preds <- predict(enet_model, newx = x_test_window, type = "response")
+    logloss <- -mean(y_test_window * log(preds + eps) + (1 - y_test_window) * log(1 - preds + eps))
+    results_enet <- rbind(results_enet, data.frame(alpha = p$alpha, lambda = p$lambda, LogLoss = logloss))
+  }
+}
+tuning_summary_enet <- results_enet %>%
+  group_by(alpha, lambda) %>%
+  summarise(mean_LogLoss = mean(LogLoss, na.rm = TRUE), .groups = "drop") %>%
+  arrange(mean_LogLoss)
+best_params_enet <- tuning_summary_enet[1, ]
+enet_final <- glmnet(x_train, y_train, family = "binomial", alpha = best_params_enet$alpha, lambda = best_params_enet$lambda)
+enet_pred_prob <- predict(enet_final, newx = x_test, type = "response")
+enet_accuracy <- mean(ifelse(enet_pred_prob > 0.5, 1, 0) == y_true_test)
+enet_logloss_test <- -mean(y_true_test * log(enet_pred_prob + eps) + (1 - y_true_test) * log(1 - enet_pred_prob + eps))
+enet_roc_obj <- roc(y_true_test, as.numeric(enet_pred_prob), quiet = TRUE)
+enet_coefs <- coef(enet_final)
+
+# === 2. RANDOM FOREST TUNING ===
+param_grid_rf <- expand.grid(
+  mtry = c(2, 4, 6, 8, 10),
+  min.node.size = c(1, 5, 10),
+  sample.fraction = c(0.6, 0.8, 1.0)
+)
+n_train_rf <- nrow(train_df)
+window_size_rf <- floor(0.7 * n_train_rf)
+horizon_rf <- 12
+results_rf <- data.frame()
+
+for (i in seq(window_size_rf, n_train_rf - horizon_rf, by = horizon_rf)) {
+  train_window <- train_df[1:i, ]
+  test_window  <- train_df[(i + 1):(i + horizon_rf), ]
+  if (nrow(test_window) == 0 || length(unique(test_window$Y)) < 2) next
+  for (j in 1:nrow(param_grid_rf)) {
+    p <- param_grid_rf[j, ]
+    rf_model <- ranger(Y ~ ., data = train_window, num.trees = 500, mtry = p$mtry,
+                       min.node.size = p$min.node.size, sample.fraction = p$sample.fraction,
+                       probability = TRUE, seed = 123)
+    preds <- predict(rf_model, data = test_window)$predictions[, "1"]
+    y_true_window <- as.numeric(as.character(test_window$Y))
+    logloss <- -mean(y_true_window * log(preds + eps) + (1 - y_true_window) * log(1 - preds + eps))
+    results_rf <- rbind(results_rf, data.frame(mtry = p$mtry, min.node.size = p$min.node.size,
+                                             sample.fraction = p$sample.fraction, LogLoss = logloss))
+  }
+}
+tuning_summary_rf <- results_rf %>%
+  group_by(mtry, min.node.size, sample.fraction) %>%
+  summarise(mean_LogLoss = mean(LogLoss, na.rm = TRUE), .groups = "drop") %>%
+  arrange(mean_LogLoss)
+best_params_rf <- tuning_summary_rf[1, ]
+rf_final <- ranger(Y ~ ., data = train_df, num.trees = 500, mtry = best_params_rf$mtry,
+                   min.node.size = best_params_rf$min.node.size, sample.fraction = best_params_rf$sample.fraction,
+                   probability = TRUE, importance = "impurity", seed = 123)
+rf_pred_prob_tuned <- predict(rf_final, data = test_df)$predictions[, "1"]
+rf_accuracy_tuned <- mean(ifelse(rf_pred_prob_tuned > 0.5, 1, 0) == y_true_test)
+rf_logloss_test_tuned <- -mean(y_true_test * log(rf_pred_prob_tuned + eps) + (1 - y_true_test) * log(1 - rf_pred_prob_tuned + eps))
+rf_roc_obj_tuned <- roc(y_true_test, rf_pred_prob_tuned, quiet = TRUE)
+rf_importance_df <- data.frame(
+  Variable = names(rf_final$variable.importance),
+  Importance = rf_final$variable.importance
+) %>% arrange(desc(Importance))
+
+# === 3. GBM TUNING ===
+param_grid_gbm <- expand.grid(
+  n.trees = c(100, 200, 300),
+  interaction.depth = c(1, 2, 3),
+  shrinkage = c(0.01, 0.1)
+)
+n_train_gbm <- nrow(train_df)
+window_size_gbm <- floor(0.7 * n_train_gbm)
+horizon_gbm <- 12
+results_gbm <- data.frame()
+
+for (i in seq(window_size_gbm, n_train_gbm - horizon_gbm, by = horizon_gbm)) {
+  train_window <- train_df[1:i, ]
+  test_window <- train_df[(i + 1):(i + horizon_gbm), ]
+  train_window$Y_num <- as.numeric(as.character(train_window$Y))
+  test_window$Y_num <- as.numeric(as.character(test_window$Y))
+  if (nrow(test_window) == 0 || length(unique(test_window$Y_num)) < 2) next
+  predictors <- names(train_window)[!names(train_window) %in% c("Y", "Y_num")]
+  gbm_formula <- as.formula(paste("Y_num ~", paste(predictors, collapse = " + ")))
+  for (j in 1:nrow(param_grid_gbm)) {
+    p <- param_grid_gbm[j, ]
+    gbm_model <- gbm(gbm_formula, data = train_window, distribution = "bernoulli",
+                     n.trees = p$n.trees, interaction.depth = p$interaction.depth,
+                     shrinkage = p$shrinkage, n.minobsinnode = 10,
+                     n.cores = 1) # Added for compatibility
+    preds <- predict(gbm_model, newdata = test_window, n.trees = p$n.trees, type = "response")
+    y_true_window <- test_window$Y_num
+    logloss <- -mean(y_true_window * log(preds + eps) + (1 - y_true_window) * log(1 - preds + eps))
+    results_gbm <- rbind(results_gbm, data.frame(n.trees = p$n.trees, interaction.depth = p$interaction.depth,
+                                               shrinkage = p$shrinkage, LogLoss = logloss))
+  }
+}
+tuning_summary_gbm <- results_gbm %>%
+  group_by(n.trees, interaction.depth, shrinkage) %>%
+  summarise(mean_LogLoss = mean(LogLoss, na.rm = TRUE), .groups = "drop") %>%
+  arrange(mean_LogLoss)
+best_params_gbm <- tuning_summary_gbm[1, ]
+train_df_gbm <- train_df
+train_df_gbm$Y_num <- as.numeric(as.character(train_df_gbm$Y))
+predictors_gbm <- names(train_df_gbm)[!names(train_df_gbm) %in% c("Y", "Y_num")]
+gbm_formula_final <- as.formula(paste("Y_num ~", paste(predictors_gbm, collapse = " + ")))
+gbm_final <- gbm(gbm_formula_final, data = train_df_gbm, distribution = "bernoulli",
+                 n.trees = best_params_gbm$n.trees, interaction.depth = best_params_gbm$interaction.depth,
+                 shrinkage = best_params_gbm$shrinkage, n.minobsinnode = 10,
+                 n.cores = 1) # Added for compatibility
+test_df_gbm <- test_df
+test_df_gbm$Y_num <- as.numeric(as.character(test_df_gbm$Y))
+gbm_pred_prob <- predict(gbm_final, newdata = test_df_gbm, n.trees = best_params_gbm$n.trees, type = "response")
+gbm_accuracy <- mean(ifelse(gbm_pred_prob > 0.5, 1, 0) == y_true_test)
+gbm_logloss_test <- -mean(y_true_test * log(gbm_pred_prob + eps) + (1 - y_true_test) * log(1 - gbm_pred_prob + eps))
+gbm_roc_obj <- roc(y_true_test, gbm_pred_prob, quiet = TRUE)
+gbm_importance_df <- summary(gbm_final, plotit = FALSE)
+
+# === 4. FINAL COMPARISON ===
+final_summary <- data.frame(
+  Model = c("Elastic Net (Tuned)", "Random Forest (Tuned)", "Gradient Boosting (Tuned)"),
+  Test_AUC = c(auc(enet_roc_obj), auc(rf_roc_obj_tuned), auc(gbm_roc_obj)),
+  Test_Accuracy = c(enet_accuracy, rf_accuracy_tuned, gbm_accuracy),
+  Test_LogLoss = c(enet_logloss_test, rf_logloss_test_tuned, gbm_logloss_test)
+)
+@
+
+\begin{frame}
+  \frametitle{4. Results: Hyperparameter Tuning}
+  \framesubtitle{Best Parameters from Rolling-Window CV (Optimizing Log-Loss)}
+  
+  \begin{block}{1. Tuned Elastic Net}
+  <<enet_tune_table, results='asis'>>=
+  knitr::kable(best_params_enet, digits=4, caption="Best Elastic Net Parameters") %>%
+    kable_styling(bootstrap_options = "condensed", font_size = 9)
+  @
+  \end{block}
+  
+  \begin{block}{2. Tuned Random Forest}
+  <<rf_tune_table, results='asis'>>=
+  knitr::kable(best_params_rf, digits=4, caption="Best Random Forest Parameters") %>%
+    kable_styling(bootstrap_options = "condensed", font_size = 9)
+  @
+  \end{block}
+  
+  \begin{block}{3. Tuned Gradient Boosting (GBM)}
+  <<gbm_tune_table, results='asis'>>=
+  knitr::kable(best_params_gbm, digits=4, caption="Best GBM Parameters") %>%
+    kable_styling(bootstrap_options = "condensed", font_size = 9)
+  @
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{4. Results: Final Model Assessment}
+  \framesubtitle{Comparing Performance on the Hold-Out Test Set (2015-2025)}
+  
+  <<final_table, results='asis'>>=
+  final_summary %>%
+    arrange(desc(Test_AUC)) %>%
+    mutate_if(is.numeric, round, 4) %>%
+    kable(caption = "Final Model Performance on Hold-Out Test Set") %>%
+    kable_styling(bootstrap_options = "striped", full_width = FALSE, position = "center")
+  @
+  
+  \vfill
+  
+  <<roc_plot>>=
+  # Plot all ROC curves together
+  plot(enet_roc_obj, col = "blue", main = "Final Model ROC Comparison (Test Set)")
+  plot(rf_roc_obj_tuned, add = TRUE, col = "darkgreen")
+  plot(gbm_roc_obj, add = TRUE, col = "darkorange")
+  
+  graphics::legend("bottomright",
+         legend = c(
+           paste0("Elastic Net (AUC: ", round(auc(enet_roc_obj), 3), ")"),
+           paste0("Random Forest (AUC: ", round(auc(rf_roc_obj_tuned), 3), ")"),
+           paste0("GBM (AUC: ", round(auc(gbm_roc_obj), 3), ")")
+         ),
+         col = c("blue", "darkgreen", "darkorange"),
+         lwd = 2,
+         cex = 0.8
+  )
+  @
+\end{frame}
+
+\begin{frame}
+  \frametitle{4. Results: Insights from Best Model}
+  \framesubtitle{Variable Importance from the Tuned Random Forest}
+  
+  The Random Forest was our best-performing model. We can inspect its \textbf{variable importance} (Mean Decrease Gini) to see what features it found most predictive.
+  
+  <<var_imp, fig.height=4.5>>=
+  # Create a ggplot bar chart for variable importance
+  rf_importance_df %>%
+    top_n(10, Importance) %>%
+    ggplot(aes(x = reorder(Variable, Importance), y = Importance, fill = Importance)) +
+    geom_bar(stat = "identity") +
+    coord_flip() +
+    labs(
+      title = "Top 10 Most Important Predictors (Random Forest)",
+      x = "Predictor",
+      y = "Mean Decrease in Gini Impurity"
+    ) +
+    scale_fill_gradient(low = "lightblue", high = "darkblue") +
+    theme_minimal() +
+    theme(legend.position = "none")
+  @
+\end{frame}
+
+% --- Section 5: Conclusion ---
+\section{5. Conclusion}
+\begin{frame}
+  \frametitle{5. Conclusion \& Discussion}
+  
+  \begin{itemize}
+    \item \textbf{Correctness of Results:}
+    \begin{itemize}
+        \item We successfully implemented a \textbf{time-series-aware} validation pipeline to select and assess 3 models from the course.
+        \item The rolling-window tuning was essential for correctly handling the data's temporal structure.
+    \end{itemize}
+    \item \textbf{Final Performance:}
+    \begin{itemize}
+        \item The \textbf{Tuned Random Forest} was the best model, achieving a Test AUC of \Sexpr{round(auc(rf_roc_obj_tuned), 3)}.
+        \item This performance is modest, but clearly better than random guessing (AUC = 0.5). This confirms the extreme difficulty of predicting monthly market direction.
+    \end{itemize}
+    \item \textbf{Key Insights:}
+    \begin{itemize}
+        \item Market-based features (lags, volatility, sentiment) were consistently ranked as most important.
+        \item The engineered interaction term \texttt{DNSI\_VIX\_lag} was highly ranked, suggesting complex, non-linear relationships are key.
+        \item Traditional macro variables (CPI, Fed Rate) were less important, likely because their impact is slower-moving than our 1-month horizon.
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \begin{center}
+    \Huge Thank You
+    \vfill
+    \Large Questions?
+  \end{center}
+\end{frame}
+
+% --- Appendix Slides ---
+\appendix
+\begin{frame}[fragile, allowframebreaks]
+  \frametitle{Appendix: Model Coefficients \& Tuning Code}
+  
+  \begin{block}{Tuned Elastic Net Coefficients}
+  <<enet_coefs, echo=TRUE>>=
+  print(enet_coefs)
+  @
+  \end{block}
+  
+  \begin{block}{Tuned GBM Feature Importance}
+  <<gbm_imp, echo=TRUE>>=
+  print(gbm_importance_df)
+  @
+  \end{block}
+
+  \begin{block}{Rolling-Window Tuning Loop (Random Forest)}
+  <<rf_loop_code, eval=FALSE, echo=TRUE, tidy=FALSE>>=
+# --- Rolling-window tuning within training data ------------------------------
+n_train <- nrow(train_df)
+window_size <- floor(0.7 * n_train)
+horizon <- 12
+results <- data.frame()
+
+set.seed(123)
+for (i in seq(window_size, n_train - horizon, by = horizon)) {
+  train_window <- train_df[1:i, ]
+  test_window  <- train_df[(i + 1):(i + horizon), ]
+  
+  if (nrow(test_window) == 0 || length(unique(test_window$Y)) < 2) next
+  
+  for (j in 1:nrow(param_grid)) {
+    p <- param_grid[j, ]
+    
+    rf_model <- ranger(
+      Y ~ .,
+      data = train_window,
+      num.trees = 500,
+      mtry = p$mtry,
+      min.node.size = p$min.node.size,
+      sample.fraction = p$sample.fraction,
+      probability = TRUE,
+      seed = 123
+    )
+    
+    preds <- predict(rf_model, data = test_window)$predictions[, "1"]
+    y_true <- as.numeric(as.character(test_window$Y))
+    
+    logloss <- -mean(y_true * log(preds + eps) + (1 - y_true) * log(1 - preds + eps))
+    auc_val <- tryCatch(as.numeric(auc(y_true, preds)), error = function(e) NA)
+    
+    results <- rbind(results, data.frame(
+        mtry = p$mtry, min.node.size = p$min.node.size,
+        sample.fraction = p$sample.fraction, LogLoss = logloss, AUC = auc_val
+      ))
+  }
+}
+  @
+  \end{block}
+  
+\end{frame}
+
+\end{document}

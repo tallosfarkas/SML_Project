@@ -676,3 +676,129 @@ final_summary %>%
   mutate_if(is.numeric, round, 4) %>%
   kable(caption = "Final Model Performance on Hold-Out Test Set") %>%
   kable_styling(bootstrap_options = "striped", full_width = FALSE)
+
+
+
+
+
+
+################ PLOTS #############################
+
+
+
+# --- 1. Save EDA Plot ---
+# This one is large and complex, so we set a larger size
+print("Saving EDA plot...")
+png("ggpairs_plot.png", width = 1200, height = 1000, res = 100)
+print(
+  GGally::ggpairs(final_data_df %>% select(-year_month,-UP_DOWN)))
+dev.off()
+
+# --- 2. Save Tuned Elastic Net ROC Plot ---
+print("Saving Elastic Net ROC plot...")
+png("enet_roc_plot.png", width = 800, height = 600, res = 100)
+plot(enet_roc_obj, col = "blue", main = "ROC Curve - Tuned Elastic Net")
+dev.off()
+
+# --- 3. Save Tuned Random Forest ROC & VarImp Plots ---
+# First, create the correct objects for the TUNED Random Forest
+rf_pred_prob_tuned <- predict(rf_final, data = test_df)$predictions[, "1"]
+rf_roc_obj_tuned <- roc(y_true_test, rf_pred_prob_tuned, quiet = TRUE)
+rf_importance_df <- data.frame(
+  Variable = names(rf_final$variable.importance),
+  Importance = rf_final$variable.importance
+) %>% arrange(desc(Importance))
+
+print("Saving Random Forest plots...")
+png("rf_tuned_roc_plot.png", width = 800, height = 600, res = 100)
+plot(rf_roc_obj_tuned, col = "darkgreen", main = "ROC Curve - Tuned Random Forest")
+dev.off()
+
+png("rf_var_imp_plot.png", width = 800, height = 700, res = 100)
+print(
+  rf_importance_df %>%
+    top_n(10, Importance) %>%
+    ggplot(aes(x = reorder(Variable, Importance), y = Importance, fill = Importance)) +
+    geom_bar(stat = "identity") +
+    coord_flip() +
+    labs(
+      title = "Top 10 Most Important Predictors (Random Forest)",
+      x = "Predictor",
+      y = "Mean Decrease in Gini Impurity"
+    ) +
+    scale_fill_gradient(low = "lightblue", high = "darkblue") +
+    theme_minimal() +
+    theme(legend.position = "none")
+)
+dev.off()
+
+
+# --- 4. Save Tuned GBM ROC Plot ---
+print("Saving GBM ROC plot...")
+png("gbm_roc_plot.png", width = 800, height = 600, res = 100)
+plot(gbm_roc_obj, col = "darkorange", main = "ROC Curve - Tuned GBM")
+dev.off()
+
+# --- 5. Save Combined ROC Plot ---
+print("Saving combined ROC plot...")
+png("combined_roc_plot.png", width = 800, height = 700, res = 100)
+plot(enet_roc_obj, col = "blue", main = "Final Model ROC Comparison (Test Set)")
+plot(rf_roc_obj_tuned, add = TRUE, col = "darkgreen")
+plot(gbm_roc_obj, add = TRUE, col = "darkorange")
+graphics::legend("bottomright",
+                 legend = c(
+                   paste0("Elastic Net (AUC: ", round(auc(enet_roc_obj), 3), ")"),
+                   paste0("Random Forest (AUC: ", round(auc(rf_roc_obj_tuned), 3), ")"),
+                   paste0("GBM (AUC: ", round(auc(gbm_roc_obj), 3), ")")
+                 ),
+                 col = c("blue", "darkgreen", "darkorange"),
+                 lwd = 2,
+                 cex = 0.9
+)
+dev.off()
+
+print("All plots saved as PNG files in your working directory.")
+
+# --- 6. Create and Save Final Summary Table ---
+# This fixes the errors in your script
+rf_accuracy_tuned <- mean(ifelse(rf_pred_prob_tuned > 0.5, 1, 0) == y_true_test)
+rf_logloss_test_tuned <- -mean(y_true_test * log(rf_pred_prob_tuned + eps) + (1 - y_true_test) * log(1 - rf_pred_prob_tuned + eps))
+
+final_summary <- data.frame(
+  Model = c("Elastic Net (Tuned)", "Random Forest (Tuned)", "Gradient Boosting (Tuned)"),
+  Test_AUC = c(
+    auc(enet_roc_obj),
+    auc(rf_roc_obj_tuned),
+    auc(gbm_roc_obj)
+  ),
+  Test_Accuracy = c(
+    enet_accuracy,
+    rf_accuracy_tuned,
+    gbm_accuracy
+  ),
+  Test_LogLoss = c(
+    enet_logloss_test,
+    rf_logloss_test_tuned,
+    gbm_logloss_test
+  )
+)
+
+# Print the table so you can screenshot it
+print(
+  final_summary %>%
+    arrange(desc(Test_AUC)) %>%
+    mutate_if(is.numeric, round, 4) %>%
+    kable(caption = "Final Model Performance on Hold-Out Test Set") %>%
+    kable_styling(bootstrap_options = "striped", full_width = FALSE)
+)
+
+# You can also save this table to a file
+library(gt)
+final_summary %>%
+  arrange(desc(Test_AUC)) %>%
+  mutate_if(is.numeric, round, 4) %>%
+  gt() %>%
+  gtsave("final_summary_table.png")
+
+print("Final summary table saved as final_summary_table.png")
+

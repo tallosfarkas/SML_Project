@@ -1,0 +1,74 @@
+\frametitle{Appendix: Rolling-Window Tuning Loop (Random Forest)}
+
+  \begin{columns}[T] % Top-aligned columns
+
+    % --- First Column ---
+    \begin{column}{.5\textwidth}
+      \begin{block}{RF Tuning Loop (Part 1)}
+      \tiny % Use smallest font
+      \begin{verbatim}
+# --- Rolling-window tuning ---
+n_train <- nrow(train_df)
+window_size <- floor(0.7 * n_train)
+horizon <- 12
+results <- data.frame()
+
+set.seed(123)
+for (i in seq(window_size, n_train - horizon,
+             by = horizon)) {
+  train_window <- train_df[1:i, ]
+  test_window  <- train_df[(i + 1):(i + horizon), ]
+
+  if (nrow(test_window) == 0 ||
+      length(unique(test_window$Y)) < 2) next
+
+  for (j in 1:nrow(param_grid)) {
+    p <- param_grid[j, ]
+
+    rf_model <- ranger(
+      Y ~ .,
+      data = train_window,
+      num.trees = 500,
+      mtry = p$mtry,
+      min.node.size = p$min.node.size,
+      sample.fraction = p$sample.fraction,
+    # (Continued in next column...)
+      \end{verbatim}
+      \end{block}
+    \end{column}
+
+    % --- Second Column ---
+    \begin{column}{.5\textwidth}
+      \begin{block}{RF Tuning Loop (Part 2)}
+      \tiny % Use smallest font
+      \begin{verbatim}
+    # (...Continued from last column)
+      probability = TRUE,
+      seed = 123
+    )
+    preds <- predict(rf_model,
+      data = test_window)$predictions[, "1"]
+
+    y_true <- as.numeric(as.character(
+      test_window$Y
+    ))
+
+    logloss <- -mean(
+      y_true * log(preds + eps) +
+      (1 - y_true) * log(1 - preds + eps)
+    )
+
+    results <- rbind(results, data.frame(
+        mtry = p$mtry,
+        min.node.size = p$min.node.size,
+        sample.fraction = p$sample.fraction,
+        LogLoss = logloss
+      ))
+  } # end inner loop
+} # end outer loop
+      \end{verbatim}
+      \end{block}
+    \end{column}
+
+  \end{columns}
+
