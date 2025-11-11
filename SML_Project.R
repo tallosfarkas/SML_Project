@@ -242,8 +242,8 @@ for (a in alpha_grid) {
 
     acc <- mean(pred_class == y_val)
     auc_val <- tryCatch({
-      roc_obj <- roc(y_val, as.numeric(pred_prob), quiet = TRUE)
-      as.numeric(auc(roc_obj))
+      roc_obj_enet <- roc(y_val, as.numeric(pred_prob), quiet = TRUE)
+      as.numeric(auc(roc_obj_enet))
     }, error = function(e) NA)
 
     accuracies <- c(accuracies, acc)
@@ -306,10 +306,13 @@ cat("\nConfusion Matrix:\n")
 print(conf_mat)
 cat("\nOut-of-sample Accuracy:", round(accuracy, 3), "\n")
 
-roc_obj <- roc(y_test, as.numeric(pred_prob))
-cat("Out-of-sample AUC:", round(auc(roc_obj), 3), "\n")
+roc_obj_enet <- roc(y_test, as.numeric(pred_prob))
+cat("Out-of-sample AUC:", round(auc(roc_obj_enet), 3), "\n")
 
-plot(roc_obj, col = "blue", main = "ROC Curve - Out-of-sample (Elastic Net)")
+plot(roc_obj_enet, col = "blue", main = "ROC Curve - Out-of-sample (Elastic Net)")
+
+
+
 
 
 ### --- Random Forest Classification --- ###################
@@ -350,10 +353,11 @@ print(conf_mat)
 cat("\nClassification Accuracy:", round(accuracy, 3), "\n")
 
 # --- AUC ----------------------------------------------------------------------
-roc_obj <- roc(as.numeric(as.character(test_df$Y)), pred_prob)
-cat("AUC:", round(auc(roc_obj), 3), "\n")
+roc_obj_rf_untuned <- roc(as.numeric(as.character(test_df$Y)), pred_prob)
+cat("AUC:", round(auc(roc_obj_rf_untuned), 3), "\n")
 
-plot(roc_obj, col = "forestgreen", main = "ROC Curve - Random Forest")
+plot(roc_obj_rf_untuned, col = "forestgreen", main = "ROC Curve - Random Forest (Untuned)")
+
 
 # --- Feature Importance -------------------------------------------------------
 importance_df <- data.frame(
@@ -483,12 +487,13 @@ cat("\nTest Log-Loss:", round(logloss_test, 4))
 
 # --- ROC/AUC plot -------------------------------------------------------------
 if (length(unique(y_true)) == 2) {
-  roc_obj <- roc(y_true, pred_prob)
-  cat("\nTest AUC:", round(auc(roc_obj), 3), "\n")
-  plot(roc_obj, col = "darkgreen", main = "ROC Curve - Tuned Random Forest (Lagged Features)")
+  roc_obj_rf_tuned <- roc(y_true, pred_prob)
+  cat("\nTest AUC:", round(auc(roc_obj_rf_tuned), 3), "\n")
+  plot(roc_obj_rf_tuned, col = "darkgreen", main = "ROC Curve - Tuned Random Forest (Lagged Features)")
 } else {
   cat("\nROC skipped: test set has only one class.\n")
 }
+
 
 # --- Feature Importance -------------------------------------------------------
 importance_df <- data.frame(
@@ -505,4 +510,323 @@ print(head(importance_df, 10))
 ################################################################################
 
 
+# We need the 'gbm' package
+if (!"gbm" %in% installed) install.packages("gbm")
+library(gbm)
 
+# --- Parameter grid to tune for GBM ---
+param_grid_gbm <- expand.grid(
+  n.trees = c(100, 200, 300),
+  interaction.depth = c(1, 2, 3), # As in slides07 (1=additive, >1=interactions)
+  shrinkage = c(0.01, 0.1)     # Learning rate
+)
+
+# --- Rolling-window tuning (for gbm) ---
+# Use the same window parameters
+n_train <- nrow(train_df)
+window_size <- floor(0.7 * n_train)
+horizon <- 12
+
+results_gbm <- data.frame()
+eps <- 1e-9 # for log-loss stability
+
+print("Starting GBM time-series tuning...")
+set.seed(123)
+for (i in seq(window_size, n_train - horizon, by = horizon)) {
+  
+  # Get window data (dataframes)
+  train_window <- train_df[1:i, ]
+  test_window <- train_df[(i + 1):(i + horizon), ]
+  
+  # --- Prepare data for gbm ---
+  # gbm for "bernoulli" requires a 0/1 numeric target
+  train_window$Y_num <- as.numeric(as.character(train_window$Y))
+  test_window$Y_num <- as.numeric(as.character(test_window$Y))
+  
+  # Skip invalid test windows
+  if (nrow(test_window) == 0 || length(unique(test_window$Y_num)) < 2) next
+  
+  # Create a formula that uses Y_num and excludes the factor Y
+  predictors <- names(train_window)[!names(train_window) %in% c("Y", "Y_num")]
+  gbm_formula <- as.formula(paste("Y_num ~", paste(predictors, collapse = " + ")))
+  
+  for (j in 1:nrow(param_grid_gbm)) {
+    p <- param_grid_gbm[j, ]
+    
+    # Fit the gbm model
+    gbm_model <- gbm(
+      gbm_formula,
+      data = train_window,
+      distribution = "bernoulli", # for 0/1 classification
+      n.trees = p$n.trees,
+      interaction.depth = p$interaction.depth,
+      shrinkage = p$shrinkage,
+      n.minobsinnode = 10 # As in slides07, a good default
+    )
+    
+    # Predict on the validation window
+    preds <- predict(gbm_model,
+                     newdata = test_window,
+                     n.trees = p$n.trees,
+                     type = "response")
+    y_true_window <- test_window$Y_num
+    
+    # --- Log-loss (cross-entropy) ---
+    logloss <- -mean(y_true_window * log(preds + eps) + (1 - y_true_window) * log(1 - preds + eps))
+    auc_val <- tryCatch(as.numeric(auc(y_true_window, preds, quiet = TRUE)), error = function(e) NA)
+    
+    results_gbm <- rbind(
+      results_gbm,
+      data.frame(
+        n.trees = p$n.trees,
+        interaction.depth = p$interaction.depth,
+        shrinkage = p$shrinkage,
+        LogLoss = logloss,
+        AUC = auc_val
+      )
+    )
+  }
+}
+print("GBM tuning complete.")
+
+# --- Aggregate across rolling folds ---
+tuning_summary_gbm <- results_gbm %>%
+  group_by(n.trees, interaction.depth, shrinkage) %>%
+  summarise(
+    mean_LogLoss = mean(LogLoss, na.rm = TRUE),
+    mean_AUC = mean(AUC, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(mean_LogLoss) # lower log-loss is better
+
+cat("Top GBM tuning results (lowest log-loss):\n")
+print(head(tuning_summary_gbm, 5))
+
+# --- Select best parameters ---
+best_params_gbm <- tuning_summary_gbm[1, ]
+cat("\nSelected GBM parameters:\n")
+print(best_params_gbm)
+
+# --- Fit final model on full training data ---
+# Prepare full train_df for gbm
+train_df_gbm <- train_df
+train_df_gbm$Y_num <- as.numeric(as.character(train_df_gbm$Y))
+predictors <- names(train_df_gbm)[!names(train_df_gbm) %in% c("Y", "Y_num")]
+gbm_formula <- as.formula(paste("Y_num ~", paste(predictors, collapse = " + ")))
+
+set.seed(123)
+gbm_final <- gbm(
+  gbm_formula,
+  data = train_df_gbm,
+  distribution = "bernoulli",
+  n.trees = best_params_gbm$n.trees,
+  interaction.depth = best_params_gbm$interaction.depth,
+  shrinkage = best_params_gbm$shrinkage,
+  n.minobsinnode = 10
+)
+
+# --- Evaluate on hold-out test set ---
+# Prepare test_df for gbm
+test_df_gbm <- test_df
+test_df_gbm$Y_num <- as.numeric(as.character(test_df_gbm$Y))
+y_true_test_gbm <- test_df_gbm$Y_num # Use the numeric 0/1 Y
+
+gbm_pred_prob <- predict(gbm_final,
+                         newdata = test_df_gbm,
+                         n.trees = best_params_gbm$n.trees,
+                         type = "response")
+gbm_pred_class <- ifelse(gbm_pred_prob > 0.5, 1, 0)
+
+# --- Metrics ---
+gbm_conf_mat <- table(Predicted = gbm_pred_class, Actual = y_true_test_gbm)
+gbm_accuracy <- mean(gbm_pred_class == y_true_test_gbm)
+gbm_logloss_test <- -mean(y_true_test_gbm * log(gbm_pred_prob + eps) + (1 - y_true_test_gbm) * log(1 - gbm_pred_prob + eps))
+
+cat("\n--- GBM Final Test Performance ---\n")
+cat("\nConfusion Matrix:\n"); print(gbm_conf_mat)
+cat("\nTest Accuracy:", round(gbm_accuracy, 3))
+cat("\nTest Log-Loss:", round(gbm_logloss_test, 4))
+
+# --- ROC/AUC plot ---
+gbm_roc_obj <- roc(y_true_test_gbm, gbm_pred_prob, quiet = TRUE)
+cat("\nTest AUC:", round(auc(gbm_roc_obj), 3), "\n")
+plot(gbm_roc_obj, col = "darkorange", main = "ROC Curve - Tuned GBM")
+
+# --- Feature Importance ---
+cat("\nGBM Feature Importance:\n")
+print(summary(gbm_final, plotit = FALSE))
+
+
+###############################################################################
+###############################################################################
+
+
+################ PLOTS & FINAL SUMMARY #############################
+
+# --- 1. Create Final Objects for Comparison ---
+
+# --- FIX: Define y_true_test (the 0/1 numeric test target) ---
+# This ensures the true test set target is available
+y_true_test <- as.numeric(as.character(test_df$Y))
+
+# --- Re-calculate all metrics from final models ---
+# This makes the script runnable in chunks, as it only needs the final models
+print("Re-calculating final metrics...")
+
+# Elastic Net (enet_final was named 'final_model' in your script)
+enet_pred_prob <- predict(final_model, newx = x_test, type = "response")
+enet_accuracy  <- mean(ifelse(enet_pred_prob > 0.5, 1, 0) == y_true_test)
+enet_logloss_test <- -mean(y_true_test * log(enet_pred_prob + eps) + (1 - y_true_test) * log(1 - enet_pred_prob + eps))
+# We already have 'enet_roc_obj' from the Elastic Net block, but we re-create it here
+# just in case the block wasn't run.
+enet_roc_obj   <- roc(y_true_test, as.numeric(enet_pred_prob), quiet = TRUE)
+
+# Random Forest (rf_final)
+rf_pred_prob_tuned <- predict(rf_final, data = test_df)$predictions[, "1"]
+rf_accuracy_tuned  <- mean(ifelse(rf_pred_prob_tuned > 0.5, 1, 0) == y_true_test)
+rf_logloss_test_tuned <- -mean(y_true_test * log(rf_pred_prob_tuned + eps) + (1 - y_true_test) * log(1 - rf_pred_prob_tuned + eps))
+# We already have 'roc_obj_rf_tuned', but re-create for safety.
+rf_roc_obj_tuned   <- roc(y_true_test, rf_pred_prob_tuned, quiet = TRUE)
+
+# Gradient Boosting (gbm_final)
+# (Must re-create test_df_gbm as it's not saved globally)
+test_df_gbm <- test_df
+test_df_gbm$Y_num <- as.numeric(as.character(test_df_gbm$Y))
+
+gbm_pred_prob <- predict(gbm_final,
+                         newdata = test_df_gbm, 
+                         n.trees = best_params_gbm$n.trees,
+                         type = "response")
+gbm_accuracy  <- mean(ifelse(gbm_pred_prob > 0.5, 1, 0) == y_true_test)
+gbm_logloss_test <- -mean(y_true_test * log(gbm_pred_prob + eps) + (1 - y_true_test) * log(1 - gbm_pred_prob + eps))
+# We already have 'gbm_roc_obj', but re-create for safety.
+gbm_roc_obj   <- roc(y_true_test, gbm_pred_prob, quiet = TRUE)
+
+
+# --- 2. Save EDA Plot ---
+print("Saving EDA plot...")
+png("ggpairs_plot.png", width = 1200, height = 1000, res = 100)
+# Create the subset for a cleaner plot
+eda_subset <- data_model %>%
+  mutate(UP_DOWN = factor(Y, levels = c(0, 1), labels = c("Down", "Up"))) %>%
+  select(
+    UP_DOWN,
+    lag1_return,
+    FedFundsRate_lag,
+    VIX_change_lag,
+    DNSI_change_lag,
+    DNSI_VIX_lag
+  )
+print(
+  GGally::ggpairs(
+    eda_subset,
+    aes(color = UP_DOWN, alpha = 0.6),
+    title = "EDA: Predictor Relationships by Market Direction (Subset)"
+  ) +
+    theme(text = element_text(size = 8)) +
+    scale_color_manual(values = c("Down" = "darkred", "Up" = "darkgreen")) +
+    scale_fill_manual(values = c("Down" = "darkred", "Up" = "darkgreen"))
+)
+dev.off()
+
+
+# --- 3. Save Tuned Elastic Net ROC Plot ---
+print("Saving Elastic Net ROC plot...")
+png("enet_roc_plot.png", width = 800, height = 600, res = 100)
+plot(enet_roc_obj, col = "blue", main = "ROC Curve - Tuned Elastic Net")
+dev.off()
+
+# --- 4. Save Tuned Random Forest ROC & VarImp Plots ---
+print("Saving Random Forest plots...")
+png("rf_tuned_roc_plot.png", width = 800, height = 600, res = 100)
+plot(rf_roc_obj_tuned, col = "darkgreen", main = "ROC Curve - Tuned Random Forest")
+dev.off()
+
+png("rf_var_imp_plot.png", width = 800, height = 700, res = 100)
+rf_importance_df <- data.frame(
+  Variable = names(rf_final$variable.importance),
+  Importance = rf_final$variable.importance
+) %>% arrange(desc(Importance))
+print(
+  rf_importance_df %>%
+    top_n(10, Importance) %>%
+    ggplot(aes(x = reorder(Variable, Importance), y = Importance, fill = Importance)) +
+    geom_bar(stat = "identity") +
+    coord_flip() +
+    labs(
+      title = "Top 10 Most Important Predictors (Random Forest)",
+      x = "Predictor",
+      y = "Mean Decrease in Gini Impurity"
+    ) +
+    scale_fill_gradient(low = "lightblue", high = "darkblue") +
+    theme_minimal() +
+    theme(legend.position = "none")
+)
+dev.off()
+
+
+# --- 5. Save Tuned GBM ROC Plot ---
+print("Saving GBM ROC plot...")
+png("gbm_roc_plot.png", width = 800, height = 600, res = 100)
+plot(gbm_roc_obj, col = "darkorange", main = "ROC Curve - Tuned GBM")
+dev.off()
+
+# --- 6. Save Combined ROC Plot ---
+print("Saving combined ROC plot...")
+png("combined_roc_plot.png", width = 800, height = 700, res = 100)
+plot(enet_roc_obj, col = "blue", main = "Final Model ROC Comparison (Test Set)")
+plot(rf_roc_obj_tuned, add = TRUE, col = "darkgreen")
+plot(gbm_roc_obj, add = TRUE, col = "darkorange")
+graphics::legend("bottomright",
+                 legend = c(
+                   paste0("Elastic Net (AUC: ", round(auc(enet_roc_obj), 3), ")"),
+                   paste0("Random Forest (AUC: ", round(auc(rf_roc_obj_tuned), 3), ")"),
+                   paste0("GBM (AUC: ", round(auc(gbm_roc_obj), 3), ")")
+                 ),
+                 col = c("blue", "darkgreen", "darkorange"),
+                 lwd = 2,
+                 cex = 0.9
+)
+dev.off()
+
+print("All plots saved as PNG files in your working directory.")
+
+# --- 7. Create and Save Final Summary Table (FIXED) ---
+final_summary <- data.frame(
+  Model = c("Elastic Net (Tuned)", "Random Forest (Tuned)", "Gradient Boosting (Tuned)"),
+  Test_AUC = c(
+    auc(enet_roc_obj),
+    auc(rf_roc_obj_tuned),
+    auc(gbm_roc_obj)
+  ),
+  Test_Accuracy = c(
+    enet_accuracy,
+    rf_accuracy_tuned,
+    gbm_accuracy
+  ),
+  Test_LogLoss = c(
+    enet_logloss_test,
+    rf_logloss_test_tuned,
+    gbm_logloss_test
+  )
+)
+
+# Print the table to the console
+print(
+  final_summary %>%
+    arrange(desc(Test_AUC)) %>%
+    mutate_if(is.numeric, round, 4) %>%
+    kable(caption = "Final Model Performance on Hold-Out Test Set") %>%
+    kable_styling(bootstrap_options = "striped", full_width = FALSE)
+)
+
+# Save the table to a file
+library(gt)
+final_summary %>%
+  arrange(desc(Test_AUC)) %>%
+  mutate_if(is.numeric, round, 4) %>%
+  gt() %>%
+  tab_header(title = "Final Model Performance on Hold-Out Test Set") %>%
+  gtsave("final_summary_table.png")
+
+print("Final summary table saved as final_summary_table.png")
