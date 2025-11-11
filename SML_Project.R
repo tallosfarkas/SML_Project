@@ -127,7 +127,7 @@ final_data_df <- macro_df %>%
   left_join(sp500_df, by = "year_month") %>%
   left_join(vix_df,   by = "year_month") %>%
   left_join(dnsi_df,  by = "year_month") %>%
-  select(-price, -price_lag1, -volume,-volume_change, return) %>%
+  select(-price, -price_lag1, -volume,-volume_change, -return) %>%
   tidyr::drop_na()
 
 # Ensure response factor
@@ -136,65 +136,70 @@ final_data_df <- final_data_df %>%
 
 final_data_df$Y <- ifelse(final_data_df$UP_DOWN == "Up", 1, 0)
 
-GGally::ggpairs(final_data_df %>% select(-year_month,-UP_DOWN,-return))
+GGally::ggpairs(final_data_df %>% select(-year_month,-UP_DOWN))
 
 ################################################################################
 ################################################################################
+
+### --- Logistic Regression with Elastic Net --- ###################
 
 # --- Prepare data -------------------------------------------------------------
 
 # We remove non-predictor variables and create interaction terms between the key
 # macro and news variables
 
-data_model <- final_data_df %>%
-  select(-UP_DOWN, -year_month, -return) %>%
+# Create all lagged + interaction features BEFORE the split
+data_model_enet <- final_data_df %>%
+  select(-UP_DOWN, -year_month) %>%
   mutate(
-    DNSI_VIX_lag      = DNSI_change_lag * VIX_change_lag,
-    DNSI_FedFunds_lag = DNSI_change_lag * FedFundsRate_lag,
-    VIX_CPI_lag       = VIX_change_lag * CPI_lag,
-    DNSI_NBER_lag     = DNSI_change_lag * NBER_lag
+    # Interaction terms
+    DNSI_VIX_lag       = DNSI_change_lag * VIX_change_lag,
+    DNSI_FedFunds_lag  = DNSI_change_lag * FedFundsRate_lag,
+    VIX_CPI_lag        = VIX_change_lag * CPI_lag,
+    DNSI_NBER_lag      = DNSI_change_lag * NBER_lag
   ) %>%
   tidyr::drop_na()
 
-# --- Chronological 30/70 split ------------------------------------------------
+# --- Chronological 70/30 split -----------------------------------------------
 
 # We decided to use the first 30% of our time series data set for the calibrtion of the
 # hyperparamter and coefficient estimation.
 # Since it is a time series, we cannot randomize.
 
+n <- nrow(data_model_enet)
+split_point <- floor(0.7 * n)
 
-n <- nrow(data_model)
-split_point <- floor(0.3 * n)
+train_df_enet <- data_model_enet[1:split_point, ]
+test_df_enet  <- data_model_enet[(split_point + 1):n, ]
 
-train_df <- data_model[1:split_point, ]
-test_df  <- data_model[(split_point + 1):n, ]
+# --- Matrices for glmnet ------------------------------------------------------
+x_train <- model.matrix(Y ~ . - 1, data = train_df_enet)
+y_train <- train_df_enet$Y
 
-x_train <- model.matrix(Y ~ . - 1, data = train_df)
-y_train <- train_df$Y
+x_test  <- model.matrix(Y ~ . - 1, data = test_df_enet)
+y_test  <- test_df_enet$Y
 
-x_test  <- model.matrix(Y ~ . - 1, data = test_df)
-y_test  <- test_df$Y
-
-### --- Logistic Regression with Elastic Net --- ###################
 
 ################################################################################
 # --- Time-Series Cross-Validation for Alpha and Lambda ------------------------
 ################################################################################
 
-# For the CV, we test alphas (mixture of lasso and ridge) betwee [0,1], with using cv, for each
+# For the CV, we test alphas (mixture of lasso and ridge) between [0,1], with using cv, for each
 # alpha to define for each alphas the optimal lambda.
-# createTimeSlices() creates expanding time windows
+# createTimeSlices() creates rolling time windows
 
 # We'll perform a small grid search for alpha and use time-series CV for lambda
-alpha_grid <- seq(0, 1, by = 0.25)  # ridge -> lasso spectrum
-n_folds <- 5
+alpha_grid <- seq(0, 1, by = 0.05)  # ridge -> lasso spectrum
 
-# Custom time-series folds
-folds <- createTimeSlices(1:nrow(x_train),
-                          initialWindow = floor(0.5 * nrow(x_train)),
-                          horizon = floor((0.5 * nrow(x_train)) / n_folds),
-                          fixedWindow = FALSE)
+window_length <- 60   # 5 years of monthly data
+horizon       <- 12     # one year step/validation
 
+folds <- createTimeSlices(
+  1:nrow(x_train),
+  initialWindow = window_length,
+  horizon       = horizon,
+  fixedWindow   = TRUE   # rolling (fixed-length) training window
+)
 cv_results <- data.frame(alpha = numeric(), lambda = numeric(),
                          Accuracy = numeric(), AUC = numeric())
 
@@ -215,6 +220,7 @@ for (a in alpha_grid) {
   # Define time-series cross-validation manually
   accuracies <- c()
   aucs <- c()
+  lambda_list <- c()
 
   for (i in seq_along(folds$train)) {
     train_idx <- folds$train[[i]]
@@ -233,9 +239,10 @@ for (a in alpha_grid) {
       type.measure = "class"
     )
 
-    best_lambda <- cvfit$lambda.min
+    lambda_fold <- cvfit$lambda.1se
+    lambda_list <- c(lambda_list, lambda_fold)
     model <- glmnet(x_tr, y_tr, family = "binomial",
-                    alpha = a, lambda = best_lambda)
+                    alpha = a, lambda = lambda_fold)
 
     pred_prob <- predict(model, newx = x_val, type = "response")
     pred_class <- ifelse(pred_prob > 0.5, 1, 0)
@@ -249,10 +256,9 @@ for (a in alpha_grid) {
     accuracies <- c(accuracies, acc)
     aucs <- c(aucs, auc_val)
   }
-
   cv_results <- rbind(cv_results, data.frame(
     alpha = a,
-    lambda = best_lambda,
+    lambda = median(lambda_list, na.rm = TRUE),
     Accuracy = mean(accuracies, na.rm = TRUE),
     AUC = mean(aucs, na.rm = TRUE)
   ))
@@ -312,193 +318,219 @@ cat("Out-of-sample AUC:", round(auc(roc_obj_enet), 3), "\n")
 plot(roc_obj_enet, col = "blue", main = "ROC Curve - Out-of-sample (Elastic Net)")
 
 
-
-
-
 ### --- Random Forest Classification --- ###################
 
+# What to tune:
 
-# --- Prepare data -------------------------------------------------------------
-# (You already created train_df and test_df above)
+# mtry: Features tried per split
+# min.node.size: Leaf Size --> Controls tree depth/overfit
+# Max.depth
+# Sample Fraction
 
-# Convert UP/DOWN target to factor for ranger
-train_df$Y <- factor(train_df$Y, levels = c(0, 1))
-test_df$Y  <- factor(test_df$Y, levels = c(0, 1))
+# What is fixed:
 
-# --- Fit Random Forest --------------------------------------------------------
-set.seed(123)
+# num.tree = 1000
+# splitrule = gini
 
-rf_model <- ranger(
-  formula = Y ~ .,
-  data = train_df,
-  num.trees = 500,
-  mtry = floor(sqrt(ncol(train_df) - 1)),  # typical heuristic
-  importance = "impurity",
-  probability = TRUE
-)
+# --- Create model matrices for R. Forrest and Gradient Boosting ---------------
 
-# --- Predict on test data -----------------------------------------------------
-rf_pred <- predict(rf_model, data = test_df)
+# --- Prepare data (no interactions) -------------------------------------------
+final_data_df$Y <- ifelse(final_data_df$UP_DOWN == "Up", 1, 0)
 
-# Extract predicted probabilities and classes
-pred_prob <- rf_pred$predictions[, "1"]
-pred_class <- ifelse(pred_prob > 0.5, 1, 0)
+# Remove unused columns but keep the original lagged predictors
+data_model_rf <- final_data_df %>%
+  select(-UP_DOWN, -year_month) %>%
+  tidyr::drop_na()
 
-# --- Evaluate performance -----------------------------------------------------
-conf_mat <- table(Predicted = pred_class, Actual = test_df$Y)
-accuracy <- mean(pred_class == as.numeric(as.character(test_df$Y)))
+# --- Chronological 70/30 split -----------------------------------------------
+n <- nrow(data_model_rf)
+split_point <- floor(0.7 * n)
 
-cat("\nConfusion Matrix:\n")
-print(conf_mat)
-cat("\nClassification Accuracy:", round(accuracy, 3), "\n")
+rf_train_df <- data_model_rf[1:split_point, ]
+rf_test_df  <- data_model_rf[(split_point + 1):n, ]
 
-# --- AUC ----------------------------------------------------------------------
-roc_obj_rf_untuned <- roc(as.numeric(as.character(test_df$Y)), pred_prob)
-cat("AUC:", round(auc(roc_obj_rf_untuned), 3), "\n")
+# --- Factorize target for classification -------------------------------------
+rf_train_df$Y <- factor(rf_train_df$Y, levels = c(0, 1))
+rf_test_df$Y  <- factor(rf_test_df$Y, levels = c(0, 1))
 
-plot(roc_obj_rf_untuned, col = "forestgreen", main = "ROC Curve - Random Forest (Untuned)")
+################################################################################
+# --- Time-Series Cross-Validation for Hyperparameter --------------------------
+################################################################################
 
+# we can use the folds from the elastic net tuning here again
+# First create the hyperparameter tuning grid:
 
-# --- Feature Importance -------------------------------------------------------
-importance_df <- data.frame(
-  Variable = names(rf_model$variable.importance),
-  Importance = rf_model$variable.importance
-) %>%
-  arrange(desc(Importance))
-
-cat("\nTop 10 Most Important Features:\n")
-print(head(importance_df, 10))
-
-
-### --- Random Forest (Time-Series Safe, Log-Loss Tuned) --- ###################
-
-# --- Parameter grid to tune ---------------------------------------------------
+p <- ncol(rf_train_df) - 1 # not counting y
 param_grid <- expand.grid(
-  mtry = c(2, 4, 6, 8, 10),
-  min.node.size = c(1, 5, 10),
-  sample.fraction = c(0.6, 0.8, 1.0)
+  mtry            = unique(pmax(1, round(c(sqrt(p), p/3, p/2, p/1.5, p)))),
+  min.node.size   = c(2, 5, 10, 20),
+  max.depth       = c(NA, 5, 10, 15, 20),
+  sample.fraction = c(0.6, 0.7, 0.8, 0.9)
+)
+nrow(param_grid)
+
+# --- Cross-validation loop as before ------------------------------------------
+
+rf_results <- data.frame(
+  mtry = numeric(),
+  min.node.size = numeric(),
+  max.depth = numeric(),
+  sample.fraction = numeric(),
+  Accuracy = numeric(),
+  AUC = numeric()
 )
 
-# --- Rolling-window tuning within training data ------------------------------
-n_train <- nrow(train_df)
-window_size <- floor(0.7 * n_train)   # first rolling window (70%)
-horizon <- 12                          # predict next month
+for (r in 1:nrow(param_grid)) {
+  pset <- param_grid[r, ]
+  cat("\nTesting combination:", r, "of", nrow(param_grid), "\n")
+  print(pset)
 
-results <- data.frame()
+  accuracies <- c()
+  aucs <- c()
 
+  for (i in seq_along(folds$train)) {
+    train_idx <- folds$train[[i]]
+    val_idx   <- folds$test[[i]]
 
-print(window_size)
-print(n_train)
-print(seq(window_size, n_train - horizon, by = horizon))
-set.seed(123)
-for (i in seq(window_size, n_train - horizon, by = horizon)) {
+    if (length(unique(y_train[val_idx])) < 2) next  # skip degenerate folds
 
-  train_window <- train_df[1:i, ]
-  test_window  <- train_df[(i + 1):(i + horizon), ]
+    # skip folds with only one class
+    if (length(unique(rf_train_df$Y[val_idx])) < 2) next
 
-  # Skip invalid test windows
-  if (nrow(test_window) == 0 || length(unique(test_window$Y)) < 2) next
+    df_train <- rf_train_df[train_idx, ]
+    df_val   <- rf_train_df[val_idx, ]
 
-  for (j in 1:nrow(param_grid)) {
-    p <- param_grid[j, ]
-
-    rf_model <- ranger(
-      Y ~ .,
-      data = train_window,
-      num.trees = 500,
-      mtry = p$mtry,
-      min.node.size = p$min.node.size,
-      sample.fraction = p$sample.fraction,
-      probability = TRUE,
-      seed = 123
-    )
-
-    preds <- predict(rf_model, data = test_window)$predictions[, "1"]
-    y_true <- as.numeric(as.character(test_window$Y))
-
-    # --- Log-loss (cross-entropy) --------------------------------------------
-    eps <- 1e-9
-    logloss <- -mean(y_true * log(preds + eps) + (1 - y_true) * log(1 - preds + eps))
-
-    # --- AUC (for reference) -------------------------------------------------
-    auc_val <- tryCatch(as.numeric(auc(y_true, preds)), error = function(e) NA)
-
-    results <- rbind(
-      results,
-      data.frame(
-        mtry = p$mtry,
-        min.node.size = p$min.node.size,
-        sample.fraction = p$sample.fraction,
-        LogLoss = logloss,
-        AUC = auc_val
+    # Conditional argument for max.depth
+    if (is.na(pset$max.depth)) {
+      rf_model <- ranger(
+        Y ~ .,
+        data = df_train,
+        num.trees = 1000,
+        mtry = pset$mtry,
+        min.node.size = pset$min.node.size,
+        sample.fraction = pset$sample.fraction,
+        splitrule = "gini",
+        probability = TRUE,
+        importance = "impurity",
+        seed = 123
       )
-    )
+    } else {
+      rf_model <- ranger(
+        Y ~ .,
+        data = df_train,
+        num.trees = 1000,
+        mtry = pset$mtry,
+        min.node.size = pset$min.node.size,
+        max.depth = pset$max.depth,
+        sample.fraction = pset$sample.fraction,
+        splitrule = "gini",
+        probability = TRUE,
+        importance = "impurity",
+        seed = 123
+      )
+    }
+
+    # Predict probabilities and classes
+    pred_prob <- predict(rf_model, data = df_val)$predictions[, 2]
+    pred_class <- ifelse(pred_prob > 0.5, 1, 0)
+
+    acc <- mean(pred_class == df_val$Y)
+    auc_val <- tryCatch({
+      roc_obj <- roc(df_val$Y, pred_prob, quiet = TRUE)
+      as.numeric(auc(roc_obj))
+    }, error = function(e) NA)
+
+    accuracies <- c(accuracies, acc)
+    aucs <- c(aucs, auc_val)
   }
+
+  rf_results <- rbind(rf_results, data.frame(
+    mtry = pset$mtry,
+    min.node.size = pset$min.node.size,
+    max.depth = pset$max.depth,
+    sample.fraction = pset$sample.fraction,
+    Accuracy = mean(accuracies, na.rm = TRUE),
+    AUC = mean(aucs, na.rm = TRUE)
+  ))
 }
 
-# --- Aggregate across rolling folds ------------------------------------------
-tuning_summary <- results %>%
-  group_by(mtry, min.node.size, sample.fraction) %>%
-  summarise(
-    mean_LogLoss = mean(LogLoss, na.rm = TRUE),
-    mean_AUC = mean(AUC, na.rm = TRUE),
-    .groups = "drop"
-  ) %>%
-  arrange(mean_LogLoss)   # lower log-loss is better
+# --- Select best hyperparameter combo ----------------------------------------
+best_row <- rf_results[which.max(rf_results$AUC), ]
+best_params <- best_row[1:4]
 
-cat("Top tuning results (lowest log-loss):\n")
-print(head(tuning_summary, 5))
-
-# --- Select best parameters ---------------------------------------------------
-best_params <- tuning_summary[1, ]
-cat("\nSelected parameters:\n")
+cat("\nBest Parameters:\n")
 print(best_params)
 
-# --- Fit final model on full training data -----------------------------------
-set.seed(123)
-rf_final <- ranger(
-  Y ~ .,
-  data = train_df,
-  num.trees = 500,
-  mtry = best_params$mtry,
-  min.node.size = best_params$min.node.size,
-  sample.fraction = best_params$sample.fraction,
-  probability = TRUE,
-  importance = "impurity"
-)
+# If max.depth = NA it means, we should not restrict the tree depth in our model
 
-# --- Evaluate on hold-out test set -------------------------------------------
-rf_pred <- predict(rf_final, data = test_df)
-pred_prob <- rf_pred$predictions[, "1"]
-pred_class <- ifelse(pred_prob > 0.5, 1, 0)
-y_true <- as.numeric(as.character(test_df$Y))
+################################################################################
+# --- Refit on full training data ---------------------------------------------
+################################################################################
 
-# --- Metrics -----------------------------------------------------------------
-conf_mat <- table(Predicted = pred_class, Actual = y_true)
-accuracy <- mean(pred_class == y_true)
+if (is.na(best_params$max.depth)) {
+  final_rf <- ranger(
+    Y ~ .,
+    data = rf_train_df,
+    num.trees = 1000,
+    mtry = best_params$mtry,
+    min.node.size = best_params$min.node.size,
+    sample.fraction = best_params$sample.fraction,
+    splitrule = "gini",
+    probability = TRUE,
+    importance = "impurity",
+    seed = 123
+  )
+} else {
+  final_rf <- ranger(
+    Y ~ .,
+    data = rf_train_df,
+    num.trees = 1000,
+    mtry = best_params$mtry,
+    min.node.size = best_params$min.node.size,
+    max.depth = best_params$max.depth,
+    sample.fraction = best_params$sample.fraction,
+    splitrule = "gini",
+    probability = TRUE,
+    importance = "impurity",
+    seed = 123
+  )
+}
 
-# Log-loss
-eps <- 1e-9
-logloss_test <- -mean(y_true * log(pred_prob + eps) + (1 - y_true) * log(1 - pred_prob + eps))
 
-cat("\nConfusion Matrix:\n"); print(conf_mat)
-cat("\nTest Accuracy:", round(accuracy, 3))
-cat("\nTest Log-Loss:", round(logloss_test, 4))
+
+roc_rf <- roc(rf_train_df$Y, predict(final_rf, data = rf_train_df)$predictions[, 2], quiet = TRUE)
+opt_thresh <- coords(roc_rf, "best", ret = "threshold")
+opt_thresh <- as.numeric(opt_thresh)
+
+################################################################################
+# --- Out-of-Sample Evaluation -------------------------------------------------
+################################################################################
+
+pred_prob_rf <- predict(final_rf, data = rf_test_df)$predictions[, "1"]
+pred_class_rf <- ifelse(pred_prob_rf > opt_thresh, 1, 0)
+
+conf_mat_rf <- table(Predicted = pred_class_rf, Actual = rf_test_df$Y)
+accuracy_rf <- mean(pred_class_rf == as.numeric(as.character(rf_test_df$Y)))
+
+
+cat("\nConfusion Matrix (RF):\n")
+print(conf_mat_rf)
+cat("\nOut-of-sample Accuracy (RF):", round(accuracy_rf, 3), "\n")
 
 # --- ROC/AUC plot -------------------------------------------------------------
-if (length(unique(y_true)) == 2) {
-  roc_obj_rf_tuned <- roc(y_true, pred_prob)
+if (length(unique(rf_test_df$Y)) == 2) {
+  roc_obj_rf_tuned <- roc(rf_test_df$Y, pred_prob_rf)
   cat("\nTest AUC:", round(auc(roc_obj_rf_tuned), 3), "\n")
-  plot(roc_obj_rf_tuned, col = "darkgreen", main = "ROC Curve - Tuned Random Forest (Lagged Features)")
+  plot(roc_obj_rf_tuned, col = "darkgreen",
+       main = "ROC Curve - Tuned Random Forest")
 } else {
   cat("\nROC skipped: test set has only one class.\n")
 }
 
-
 # --- Feature Importance -------------------------------------------------------
 importance_df <- data.frame(
-  Variable = names(rf_final$variable.importance),
-  Importance = rf_final$variable.importance
+  Variable = names(final_rf$variable.importance),
+  Importance = final_rf$variable.importance
 ) %>%
   arrange(desc(Importance))
 
@@ -506,9 +538,32 @@ cat("\nTop 10 Most Important Features:\n")
 print(head(importance_df, 10))
 
 
-################################################################################
-################################################################################
+# --- Interaction strength using iml (works with ranger)
 
+library(iml)
+library(ggplot2)
+
+# Prepare data and predictor
+X <- train_df %>% dplyr::select(-Y)
+predictor <- Predictor$new(final_rf, data = X, y = train_df$Y, type = "response")
+
+# Compute feature interaction strength
+interaction_obj <- Interaction$new(predictor)
+interaction_strength <- interaction_obj$results %>%
+  dplyr::arrange(desc(.interaction))
+
+# --- Plot top interacting features ---
+ggplot(head(interaction_strength, 10),
+       aes(x = reorder(.feature, .interaction), y = .interaction)) +
+  geom_col(fill = "darkgreen") +
+  coord_flip() +
+  labs(title = "Features by Interaction Strength (Random Forest)",
+       x = "Feature", y = "Interaction Strength") +
+  theme_minimal()
+
+
+################################################################################
+################################################################################
 
 # We need the 'gbm' package
 if (!"gbm" %in% installed) install.packages("gbm")
@@ -523,7 +578,7 @@ param_grid_gbm <- expand.grid(
 
 # --- Rolling-window tuning (for gbm) ---
 # Use the same window parameters
-n_train <- nrow(train_df)
+n_train <- nrow(rf_train_df)
 window_size <- floor(0.7 * n_train)
 horizon <- 12
 
@@ -533,26 +588,26 @@ eps <- 1e-9 # for log-loss stability
 print("Starting GBM time-series tuning...")
 set.seed(123)
 for (i in seq(window_size, n_train - horizon, by = horizon)) {
-  
+
   # Get window data (dataframes)
-  train_window <- train_df[1:i, ]
-  test_window <- train_df[(i + 1):(i + horizon), ]
-  
+  train_window <- rf_train_df[1:i, ]
+  test_window <- rf_train_df[(i + 1):(i + horizon), ]
+
   # --- Prepare data for gbm ---
   # gbm for "bernoulli" requires a 0/1 numeric target
   train_window$Y_num <- as.numeric(as.character(train_window$Y))
   test_window$Y_num <- as.numeric(as.character(test_window$Y))
-  
+
   # Skip invalid test windows
   if (nrow(test_window) == 0 || length(unique(test_window$Y_num)) < 2) next
-  
+
   # Create a formula that uses Y_num and excludes the factor Y
   predictors <- names(train_window)[!names(train_window) %in% c("Y", "Y_num")]
   gbm_formula <- as.formula(paste("Y_num ~", paste(predictors, collapse = " + ")))
-  
+
   for (j in 1:nrow(param_grid_gbm)) {
     p <- param_grid_gbm[j, ]
-    
+
     # Fit the gbm model
     gbm_model <- gbm(
       gbm_formula,
@@ -563,18 +618,18 @@ for (i in seq(window_size, n_train - horizon, by = horizon)) {
       shrinkage = p$shrinkage,
       n.minobsinnode = 10 # As in slides07, a good default
     )
-    
+
     # Predict on the validation window
     preds <- predict(gbm_model,
                      newdata = test_window,
                      n.trees = p$n.trees,
                      type = "response")
     y_true_window <- test_window$Y_num
-    
+
     # --- Log-loss (cross-entropy) ---
     logloss <- -mean(y_true_window * log(preds + eps) + (1 - y_true_window) * log(1 - preds + eps))
     auc_val <- tryCatch(as.numeric(auc(y_true_window, preds, quiet = TRUE)), error = function(e) NA)
-    
+
     results_gbm <- rbind(
       results_gbm,
       data.frame(
@@ -608,8 +663,8 @@ cat("\nSelected GBM parameters:\n")
 print(best_params_gbm)
 
 # --- Fit final model on full training data ---
-# Prepare full train_df for gbm
-train_df_gbm <- train_df
+# Prepare full rf_train_df for gbm
+train_df_gbm <- rf_train_df
 train_df_gbm$Y_num <- as.numeric(as.character(train_df_gbm$Y))
 predictors <- names(train_df_gbm)[!names(train_df_gbm) %in% c("Y", "Y_num")]
 gbm_formula <- as.formula(paste("Y_num ~", paste(predictors, collapse = " + ")))
@@ -627,7 +682,7 @@ gbm_final <- gbm(
 
 # --- Evaluate on hold-out test set ---
 # Prepare test_df for gbm
-test_df_gbm <- test_df
+test_df_gbm <- rf_test_df
 test_df_gbm$Y_num <- as.numeric(as.character(test_df_gbm$Y))
 y_true_test_gbm <- test_df_gbm$Y_num # Use the numeric 0/1 Y
 
@@ -656,7 +711,6 @@ plot(gbm_roc_obj, col = "darkorange", main = "ROC Curve - Tuned GBM")
 cat("\nGBM Feature Importance:\n")
 print(summary(gbm_final, plotit = FALSE))
 
-
 ###############################################################################
 ###############################################################################
 
@@ -681,12 +735,16 @@ enet_logloss_test <- -mean(y_true_test * log(enet_pred_prob + eps) + (1 - y_true
 # just in case the block wasn't run.
 enet_roc_obj   <- roc(y_true_test, as.numeric(enet_pred_prob), quiet = TRUE)
 
-# Random Forest (rf_final)
-rf_pred_prob_tuned <- predict(rf_final, data = test_df)$predictions[, "1"]
-rf_accuracy_tuned  <- mean(ifelse(rf_pred_prob_tuned > 0.5, 1, 0) == y_true_test)
+# Random Forest (final_rf)
+rf_pred_prob_tuned <- predict(final_rf, data = test_df)$predictions[, 2]
+rf_accuracy_tuned  <- mean(ifelse(rf_pred_prob_tuned > as.numeric(opt_thresh), 1, 0) == y_true_test)
 rf_logloss_test_tuned <- -mean(y_true_test * log(rf_pred_prob_tuned + eps) + (1 - y_true_test) * log(1 - rf_pred_prob_tuned + eps))
 # We already have 'roc_obj_rf_tuned', but re-create for safety.
 rf_roc_obj_tuned   <- roc(y_true_test, rf_pred_prob_tuned, quiet = TRUE)
+
+
+length(rf_pred_prob_tuned)
+length(y_true_test)
 
 # Gradient Boosting (gbm_final)
 # (Must re-create test_df_gbm as it's not saved globally)
@@ -694,7 +752,7 @@ test_df_gbm <- test_df
 test_df_gbm$Y_num <- as.numeric(as.character(test_df_gbm$Y))
 
 gbm_pred_prob <- predict(gbm_final,
-                         newdata = test_df_gbm, 
+                         newdata = test_df_gbm,
                          n.trees = best_params_gbm$n.trees,
                          type = "response")
 gbm_accuracy  <- mean(ifelse(gbm_pred_prob > 0.5, 1, 0) == y_true_test)
@@ -744,8 +802,8 @@ dev.off()
 
 png("rf_var_imp_plot.png", width = 800, height = 700, res = 100)
 rf_importance_df <- data.frame(
-  Variable = names(rf_final$variable.importance),
-  Importance = rf_final$variable.importance
+  Variable = names(final_rf$variable.importance),
+  Importance = final_rf$variable.importance
 ) %>% arrange(desc(Importance))
 print(
   rf_importance_df %>%
