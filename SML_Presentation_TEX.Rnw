@@ -75,6 +75,39 @@
 \end{itemize}
 \end{frame}
 
+\begin{frame}{Exploratory Analysis: Feature Relationships}
+
+\begin{columns}[T, totalwidth=\textwidth]
+
+  % Left: Plot
+  \begin{column}{0.50\textwidth}
+    \includegraphics[width=0.9\linewidth]{pair_plot.png} \\
+    {\footnotesize Pairwise correlations and marginal distributions.}
+  \end{column}
+
+  % Right: Key insights
+  \begin{column}{0.50\textwidth}
+    \footnotesize
+    \textbf{Why these predictors may matter:}
+    \begin{itemize}
+        \item \textbf{Macro indicators} (CPI, Fed Funds Rate, NBER) affect discount rates and expected returns.
+        \item \textbf{Lagged returns} reflect momentum and reversal effects.
+        \item \textbf{Volatility} (VIX) captures uncertainty and risk sentiment.
+        \item \textbf{Sentiment} (DNSI) reflects investor expectations and behavioral biases.
+    \end{itemize}
+
+    \vspace{0.5em}
+    \textbf{Empirical observation:}
+    \begin{itemize}
+        \item Weak linear correlations $\Rightarrow$ low-signal, non-linear problem.
+        \item Several predictors show significant \textbf{ multicollinearity}.
+        \item Motivates using \textbf{Elastic Net}, \textbf{Random Forests}, and \textbf{Gradient Boosting}.
+    \end{itemize}
+  \end{column}
+
+\end{columns}
+
+\end{frame}
 %-------------------------------------------------------
 \begin{frame}{Stationarity Considerations}
 \begin{itemize}
@@ -134,7 +167,6 @@
 
 \end{frame}
 %-------------------------------------------------------
-
 
 \begin{frame}{Class Imbalance, Threshold Adjustment \& AUC}
 
@@ -216,9 +248,88 @@
 \end{itemize}
 \end{frame}
 
+
+%-------------------------------------------------------
+\begin{frame}{Elastic Net: Out-of-Sample Performance}
+
+\small
+\textbf{Predictive performance (test set):}
+\footnotesize{
+\begin{itemize}
+  \item Accuracy: \textbf{64.3\%}
+  \item AUC: \textbf{0.79} (strong probability ranking ability)
+  \item Threshold tuned : \(t^*= 0.6743 \) \(\rightarrow\) The model avoids overly optimistic Up predictions
+\end{itemize}
+}
+
+
+\small{\textbf{Confusion matrix:}}
+\footnotesize{
+\begin{center}
+\begin{tabular}{c|cc}
+              & Actual 0 & Actual 1 \\
+\hline
+Predicted 0   & 36       & 38       \\
+Predicted 1   & 8        & 47       \\
+\end{tabular}
+\end{center}
+}
+
+\small{\textbf{Interpretation:}}
+\footnotesize{
+\begin{itemize}
+  \item \textbf{Specificity} (correct Down predictions):
+            $36/44 \approx \textbf{82\%}$
+            $\Rightarrow$ we correctly flag most Down months.
+  \item \textbf{Sensitivity} (correct Up predictions):
+            $47/85 \approx \textbf{55\%}$
+            $\Rightarrow$ we still capture the majority of Up months.
+  \item The model trades a small loss in raw accuracy for a much better
+        \textbf{balance} between detecting costly Down markets and
+        still identifying Up markets, which is desirable in an
+        asset-management context.
+\end{itemize}
+}
+\end{frame}
+
 %-------------------------------------------------------
 
+\begin{frame}{Elastic Net: Selected Predictors and Probability Ranking}
 
+\small
+\begin{columns}[T, totalwidth=\textwidth]
+
+  % Left: Coefficients
+  \begin{column}{0.52\textwidth}
+  \centering{
+    \includegraphics[width=0.75\linewidth]{enet_coeffs.png}
+}
+    {\scriptsize
+    \begin{itemize}
+    \item  Coeff. represent changes in the \textbf{odds} of an ``Up'' month.
+    \item  Elastic Net highlights variables with consistent signal.
+    \item  Momentum is a major driver of Up probabilities.
+    \item  Sentiment matters more during recession periods.
+    \end{itemize}
+    }
+
+  \end{column}
+
+  % Right: ROC Curve
+  \begin{column}{0.5\textwidth}
+  \centering{
+    \includegraphics[width=0.78\linewidth]{roc_enet.png}
+} \\
+\vspace{1.75em}
+    {\scriptsize
+    \begin{itemize}
+    \item \textbf{AUC = 0.79}: strong discriminative ability despite low-signal, noisy financial data.
+    \item ROC curve well above diagonal $\Rightarrow$ model ranks Up vs.\ Down months effectively.
+    \end{itemize}}
+  \end{column}
+\end{columns}
+
+\end{frame}
 
 %-------------------------------------------------------
 \begin{frame}{3. Methodology: Model Assessment Strategy}

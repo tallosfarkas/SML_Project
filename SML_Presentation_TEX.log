@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.12.2)  13 NOV 2025 11:53
+This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.12.2)  13 NOV 2025 13:26
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -969,39 +969,69 @@ File: ot1mathkerncmss.fd 2020/01/31 Fontinst v1.933 font definitions for OT1/ma
 thkerncmss.
 ) [4
 
-] [5
-
 ]
-Overfull \vbox (3.5789pt too high) detected at line 185
+<pair_plot.png, id=66, 867.24pt x 867.24pt>
+File: pair_plot.png Graphic file (type png)
+<use pair_plot.png>
+Package pdftex.def Info: pair_plot.png  used on input line 160.
+(pdftex.def)             Requested size: 195.00348pt x 195.00148pt.
+
+Overfull \vbox (3.0194pt too high) detected at line 160
  []
 
-[6
+[5
+
+ <./pair_plot.png>] [6
 
 ]
-<imbalance_plot.png, id=86, 433.62pt x 433.62pt>
-File: imbalance_plot.png Graphic file (type png)
-<use imbalance_plot.png>
-Package pdftex.def Info: imbalance_plot.png  used on input line 231.
-(pdftex.def)             Requested size: 146.25261pt x 146.25111pt.
-
-Overfull \vbox (3.49307pt too high) detected at line 231
+Overfull \vbox (3.5789pt too high) detected at line 218
  []
 
 [7
 
- <./imbalance_plot.png>]
-Overfull \vbox (6.98444pt too high) detected at line 267
+]
+<imbalance_plot.png, id=98, 433.62pt x 433.62pt>
+File: imbalance_plot.png Graphic file (type png)
+<use imbalance_plot.png>
+Package pdftex.def Info: imbalance_plot.png  used on input line 263.
+(pdftex.def)             Requested size: 146.25261pt x 146.25111pt.
+
+Overfull \vbox (3.49307pt too high) detected at line 263
  []
 
 [8
 
-] [9
+ <./imbalance_plot.png>]
+Overfull \vbox (6.98444pt too high) detected at line 299
+ []
+
+[9
 
 ] [10
 
-] [11
+]
+<enet_coeffs.png, id=128, 505.89pt x 433.62pt>
+File: enet_coeffs.png Graphic file (type png)
+<use enet_coeffs.png>
+Package pdftex.def Info: enet_coeffs.png  used on input line 382.
+(pdftex.def)             Requested size: 169.00555pt x 144.86165pt.
+<roc_enet.png, id=129, 803.0pt x 602.25pt>
+File: roc_enet.png Graphic file (type png)
+<use roc_enet.png>
+Package pdftex.def Info: roc_enet.png  used on input line 382.
+(pdftex.def)             Requested size: 169.00389pt x 126.7519pt.
 
-] [12
+Overfull \hbox (8.66873pt too wide) detected at line 382
+[][][][][][][][][][][] [][][][][][][]
+ []
+
+[11
+
+ <./enet_coeffs.png> <./roc_enet.png>] [12
+
+] [13
+
+] [14
 
 ]
 \tf@nav=\write6
@@ -1013,7 +1043,8 @@ Overfull \vbox (6.98444pt too high) detected at line 267
 \tf@snm=\write8
 \openout8 = `SML_Presentation_TEX.snm'.
 
- (./SML_Presentation_TEX.aux)
+
+(./SML_Presentation_TEX.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-02-20>
@@ -1022,11 +1053,11 @@ Package rerunfilecheck Info: File `SML_Presentation_TEX.out' has not changed.
 (rerunfilecheck)             Checksum: D41D8CD98F00B204E9800998ECF8427E;0.
  ) 
 Here is how much of TeX's memory you used:
- 23431 strings out of 474116
- 458059 string characters out of 5743682
+ 23463 strings out of 474116
+ 458632 string characters out of 5743682
  1942187 words of memory out of 5000000
- 45275 multiletter control sequences out of 15000+600000
- 572803 words of font info for 89 fonts, out of 8000000 for 9000
+ 45304 multiletter control sequences out of 15000+600000
+ 573517 words of font info for 91 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  128i,15n,123p,478b,838s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/local/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb
@@ -1045,13 +1076,13 @@ ocal/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmssi9.pfb></usr/lo
 cal/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/loc
 al/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb></usr/local
 /texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/local/t
-exlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></usr/local/tex
-live/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/local/texl
-ive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt9.pfb>
-Output written on SML_Presentation_TEX.pdf (12 pages, 294200 bytes).
+exlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/local/tex
+live/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></usr/local/texli
+ve/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt9.pfb>
+Output written on SML_Presentation_TEX.pdf (14 pages, 1475867 bytes).
 PDF statistics:
- 293 PDF objects out of 1000 (max. 8388607)
- 176 compressed objects within 2 object streams
- 25 named destinations out of 1000 (max. 500000)
- 306 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 314 PDF objects out of 1000 (max. 8388607)
+ 188 compressed objects within 2 object streams
+ 29 named destinations out of 1000 (max. 500000)
+ 321 words of extra memory for PDF output out of 10000 (max. 10000000)
 

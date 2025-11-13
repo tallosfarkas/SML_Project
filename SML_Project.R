@@ -121,7 +121,9 @@ dnsi_df <- dnsi_raw %>%
 
 
 
-### Merge + features ###########################################################
+################################################################################
+# --- Merge everything for final data set  -------------------------------------
+################################################################################
 
 final_data_df <- macro_df %>%
   left_join(sp500_df, by = "year_month") %>%
@@ -136,7 +138,23 @@ final_data_df <- final_data_df %>%
 
 final_data_df$Y <- ifelse(final_data_df$UP_DOWN == "Up", 1, 0)
 
-GGally::ggpairs(final_data_df %>% select(-year_month,-UP_DOWN))
+# Create the plot and store it
+pair_plot <- GGally::ggpairs(
+  final_data_df %>% select(-year_month, -UP_DOWN)
+)
+
+# Show the plot (optional)
+pair_plot
+
+# Save as PNG
+ggsave(
+  filename = "pair_plot.png",
+  plot = pair_plot,
+  width = 12,
+  height = 12,
+  dpi = 300
+)
+
 
 ################################################################################
 # --- Analyse Imbalance in the underlying data set  ----------------------------
@@ -378,7 +396,48 @@ cat("\nOut-of-sample Accuracy:", round(accuracy, 3), "\n")
 roc_obj_enet <- roc(y_test, as.numeric(pred_prob))
 cat("Out-of-sample AUC:", round(auc(roc_obj_enet), 3), "\n")
 
+png("roc_enet.png", width = 800, height = 600, res = 120)
 plot(roc_obj_enet, col = "blue", main = "ROC Curve - Out-of-sample (Elastic Net)")
+dev.off()
+
+# --- Extract coefficients at best lambda and alpha ----------------------------
+
+# Because coefficients are shrunk and selected jointly through the penalty parameter,
+# classical inference is not valid. Therefore, significance testing is replaced by
+# OoS predictive performance metrics.
+
+
+# Extract sparse coefficient matrix
+coef_mat <- coef(final_model)
+
+# Convert to a tidy data frame manually
+coef_df <- data.frame(
+  term = rownames(coef_mat),
+  estimate = as.numeric(coef_mat)
+)
+coef_df$odds_ratio <- exp(coef_df$estimate)
+
+coef_df <- coef_df %>%
+  filter(term != "(Intercept)") %>%
+  arrange(desc(abs(estimate)))
+
+print(coef_df)
+
+ggplot(coef_df, aes(x = reorder(term, odds_ratio), y = odds_ratio)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  theme_minimal(base_size = 12) +
+  labs(
+    title = "Elastic Net Coefficients",
+    x = "Predictor",
+    y = "Coefficient (Chnange in the Odds Ratio)"
+  )
+
+ggsave(
+  filename = "enet_coeffs.png",
+  plot = last_plot(),
+  width = 7, height = 6, dpi = 300
+)
 
 
 ### --- Random Forest Classification --- ###################
