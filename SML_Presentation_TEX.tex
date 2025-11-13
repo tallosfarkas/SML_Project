@@ -144,26 +144,90 @@
 \end{frame}
 
 %-------------------------------------------------------
-\begin{frame}{Hyperparameter Tuning: Time-Series CV}
+\begin{frame}{Hyperparameter Tuning: Time-Series Cross-Validation}
+\footnotesize
+
 \begin{itemize}
-  \item \textbf{Why not standard cross-validation?}
+  \item[] \textbf{Why not standard cross-validation?}
   \begin{itemize}
-    \item Random \(k\)-fold CV assumes i.i.d. data.
-    \item Time-series data exhibit autocorrelation \(\Rightarrow\) temporal dependence.
-    \item Randomly shuffling would let the model “see the future” \(\Rightarrow\) data leakage and over-optimism.
+    \item Random $k$-fold CV assumes i.i.d.\ data.
+    \item Time-series data exhibit autocorrelation $\Rightarrow$ temporal dependence.
+    \item Random shuffling lets the model ``see the future'' $\Rightarrow$ data leakage and over-optimism.
   \end{itemize}
-  \vspace{0.1cm}
-  \item \textbf{Improvement: Rolling-window cross-validation}
+
+  \vspace{0.4em}
+  \item[] \textbf{Our method: Rolling-window time-series CV}
   \begin{itemize}
-    \item Create a hyperparameter grid for cross-validation.
-    \item Initial training window: 60 months (\(\approx 5\) years).
-    \item Validation horizon: 12 months (\(\approx 1\) year).
-    \item Fixed-length rolling window moving forward in time.
-    \item Evaluate accuracy and AUC per fold.
+    \item Construct a hyperparameter grid:
+      \begin{itemize}
+        \item Elastic Net: $\alpha$ and $\lambda$ grid.
+        \item Random Forest: \texttt{mtry}, \texttt{min.node.size}, \texttt{max.depth}, \texttt{sample.fraction}.
+      \end{itemize}
+    \item Use a chronological window structure:
+      \begin{itemize}
+        \item Initial training window: 60 months (5 years).
+        \item Validation horizon: 12 months (1 year).
+        \item Fixed-length rolling window moving forward in time.
+      \end{itemize}
+    \item For each fold:
+      \begin{itemize}
+        \item Fit model only on past data and predict the next 12 months.
+        \item Record accuracy and AUC on the validation slice.
+      \end{itemize}
   \end{itemize}
-  \vspace{0.1cm}
-  \item \textbf{Result:} Choose the best hyperparameters by highest mean AUC across folds.
+  \item[] \textbf{Result:}
+  \begin{itemize}
+    \item Select the hyperparameters achieving the \textbf{highest mean AUC across all rolling folds}.
+    \item Prevents look-ahead bias and mimics real-time forecasting.
+  \end{itemize}
 \end{itemize}
+
+\end{frame}
+%-------------------------------------------------------
+
+
+\begin{frame}{Class Imbalance, Threshold Adjustment \& AUC}
+
+\begin{columns}[T, totalwidth=\textwidth]
+  % Left: Plot
+  \begin{column}{0.45\textwidth}
+    \begin{center}
+      \includegraphics[width=0.75\linewidth]{imbalance_plot.png}\\[0.3em]
+      \footnotesize{Class imbalance in monthly S\&P 500 direction}
+    \end{center}
+  \end{column}
+
+  % Right: Logic + AUC explanation
+  \begin{column}{0.55\textwidth}
+    \footnotesize
+    \begin{itemize}
+      \item Dependent variable \texttt{UP\_DOWN} is imbalanced.
+      \item A naive classifier that would always predict ``Up'' would achieve high accuracy.
+      \item A simple threshold of \(0.5\) reduces the accuracy. \\
+
+      \vspace{0.1em}
+
+      $\Rightarrow$ \textbf{Accuracy alone is misleading.}
+    \end{itemize}
+
+    \textbf{Threshold adjustment (Youden's J):}
+    \[
+      t^\ast = \arg\max_{t} \big\{ \text{Sensitivity}(t) + \text{Specificity}(t) - 1 \big\}
+    \]
+    \vspace{-1.2em}
+    \begin{itemize}
+      \item We tune $t^\ast$ on the \textbf{training set} using the ROC curve.
+      \item Then apply this fixed threshold to the \textbf{test set} for true OoS evaluation.
+    \end{itemize}
+
+    \textbf{AUC is robust here:}
+    \begin{itemize}
+      \item ROC/AUC depends on the \emph{ranking} of predicted probabilities, not on class proportions. \\
+      $\Rightarrow$ \textbf{AUC is invariant to class imbalance} and a suitable metric for our setting.
+    \end{itemize}
+  \end{column}
+\end{columns}
+
 \end{frame}
 
 %-------------------------------------------------------
