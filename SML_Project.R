@@ -139,6 +139,36 @@ final_data_df$Y <- ifelse(final_data_df$UP_DOWN == "Up", 1, 0)
 GGally::ggpairs(final_data_df %>% select(-year_month,-UP_DOWN))
 
 ################################################################################
+# --- Analyse Imbalance in the underlying data set  ----------------------------
+################################################################################
+
+imbalance_df <- final_data_df %>%
+  mutate(UP_DOWN = factor(UP_DOWN, levels = c("Down","Up")))
+
+# Create imbalance plot and store it
+imb_plot <- ggplot(imbalance_df, aes(UP_DOWN)) +
+  geom_bar(fill = "steelblue", alpha = 0.8) +
+  geom_text(
+    stat = "count",
+    aes(label = after_stat(count)),
+    vjust = -0.5,
+    size = 5
+  ) +
+  theme_minimal(base_size = 14) +
+  labs(
+    title = "Class Imbalance in Monthly S&P 500 Direction",
+    x = "Market Direction",
+    y = "Frequency"
+  )
+
+# Save plot as PNG
+ggsave("imbalance_plot.png",
+       plot = imb_plot,
+       width = 6,
+       height = 6,
+       dpi = 300)
+
+################################################################################
 ################################################################################
 
 ### --- Logistic Regression with Elastic Net --- ###################
@@ -188,26 +218,39 @@ y_test  <- test_df_enet$Y
 # alpha to define for each alphas the optimal lambda.
 # createTimeSlices() creates rolling time windows
 
-# We'll perform a small grid search for alpha and use time-series CV for lambda
-alpha_grid <- seq(0, 1, by = 0.05)  # ridge -> lasso spectrum
+### --- Time-Series CV Folds ---------------------------------------------------
 
 window_length <- 60   # 5 years of monthly data
-horizon       <- 12     # one year step/validation
+horizon       <- 12   # 1-year validation
 
 folds <- createTimeSlices(
   1:nrow(x_train),
   initialWindow = window_length,
   horizon       = horizon,
-  fixedWindow   = TRUE   # rolling (fixed-length) training window
+  fixedWindow   = TRUE
 )
+
+### --- Grid Search ------------------------------------------------------------
+# We'll perform a small grid search for alpha and lambda
+
+# Lambda grid (log-spaced)
+lambda_grid <- exp(seq(log(1e-4), log(10), length.out = 40))
+
+# Alpha grid: ridge -> lasso spectrum
+alpha_grid  <- seq(0, 1, by = 0.1)
+
+### --- Storage ----------------------------------------------------------------
+
 cv_results <- data.frame(alpha = numeric(), lambda = numeric(),
                          Accuracy = numeric(), AUC = numeric())
 
 
+### --- Time-Series CV ---------------------------------------------------------
+
 # The loop performes "nested" time-series cross validation
 
-# For each alpha, run several expanding window folds and within each fold use cv.glmnet
-# to find the best lambda
+# For each alpha, run several expanding window folds and within each fold find
+# the best lambda
 
 # Then fit the model and record the Accuracy and AUC on the validation slice
 
@@ -217,63 +260,69 @@ cv_results <- data.frame(alpha = numeric(), lambda = numeric(),
 for (a in alpha_grid) {
   cat("Testing alpha =", a, "\n")
 
-  # Define time-series cross-validation manually
-  accuracies <- c()
-  aucs <- c()
-  lambda_list <- c()
+  auc_mat <- matrix(NA, nrow = length(folds$train), ncol = length(lambda_grid))
+  acc_mat <- matrix(NA, nrow = length(folds$train), ncol = length(lambda_grid))
 
   for (i in seq_along(folds$train)) {
-    train_idx <- folds$train[[i]]
-    val_idx   <- folds$test[[i]]
 
-    x_tr <- x_train[train_idx, ]
-    y_tr <- y_train[train_idx]
-    x_val <- x_train[val_idx, ]
-    y_val <- y_train[val_idx]
+    tr  <- folds$train[[i]]
+    val <- folds$test[[i]]
 
-    cvfit <- cv.glmnet(
+    # Skip folds with only one class
+    if (length(unique(y_train[val])) < 2) next
+
+    x_tr <- x_train[tr, ]
+    y_tr <- y_train[tr]
+
+    x_val <- x_train[val, ]
+    y_val <- y_train[val]
+
+    # Fit path for all lambdas (TS-safe)
+    fit <- glmnet(
       x = x_tr,
       y = y_tr,
       family = "binomial",
       alpha = a,
-      type.measure = "class"
+      lambda = lambda_grid
     )
 
-    lambda_fold <- cvfit$lambda.1se
-    lambda_list <- c(lambda_list, lambda_fold)
-    model <- glmnet(x_tr, y_tr, family = "binomial",
-                    alpha = a, lambda = lambda_fold)
+    # Predict whole lambda path at once (efficient)
+    pred_prob_mat <- predict(fit, newx = x_val, type = "response")
 
-    pred_prob <- predict(model, newx = x_val, type = "response")
-    pred_class <- ifelse(pred_prob > 0.5, 1, 0)
+    for (j in seq_along(lambda_grid)) {
+      p <- pred_prob_mat[, j]
+      pred_class <- ifelse(p > 0.5, 1, 0)
 
-    acc <- mean(pred_class == y_val)
-    auc_val <- tryCatch({
-      roc_obj_enet <- roc(y_val, as.numeric(pred_prob), quiet = TRUE)
-      as.numeric(auc(roc_obj_enet))
-    }, error = function(e) NA)
+      acc_mat[i, j] <- mean(pred_class == y_val)
 
-    accuracies <- c(accuracies, acc)
-    aucs <- c(aucs, auc_val)
+      auc_mat[i, j] <- tryCatch({
+        as.numeric(auc(roc(y_val, p, quiet = TRUE)))
+      }, error = function(e) NA)
+    }
   }
+
+  mean_auc <- colMeans(auc_mat, na.rm = TRUE)
+  best_idx <- which.max(mean_auc)
+
   cv_results <- rbind(cv_results, data.frame(
     alpha = a,
-    lambda = median(lambda_list, na.rm = TRUE),
-    Accuracy = mean(accuracies, na.rm = TRUE),
-    AUC = mean(aucs, na.rm = TRUE)
+    lambda = lambda_grid[best_idx],
+    AUC = mean_auc[best_idx],
+    Accuracy = colMeans(acc_mat, na.rm = TRUE)[best_idx]
   ))
 }
 
-# --- Select best alpha & lambda ----------------------------------------------
+
+# --- Select best alpha & lambda -----------------------------------------------
 
 # We then pick the alpha & lambda combination that gave the the highest mean AUC
 # (Area under the curve) i.e. the area under the ROC curve.
 
-best_row <- cv_results[which.max(cv_results$AUC), ]
-best_alpha <- best_row$alpha
-best_lambda <- best_row$lambda
+best_row     <- cv_results[which.max(cv_results$AUC), ]
+best_alpha   <- best_row$alpha
+best_lambda  <- best_row$lambda
 
-cat("\nBest Alpha:", best_alpha, "\nBest Lambda:", best_lambda, "\n")
+cat("\nBest alpha:", best_alpha, "\nBest lambda:", best_lambda, "\n")
 
 ################################################################################
 # --- Refit on full training data ---------------------------------------------
@@ -291,6 +340,20 @@ final_model <- glmnet(
   lambda = best_lambda
 )
 
+# --- Threshold Tuning due to imbalances in the underlying data classes --------
+
+# Train-set probability predictions
+train_prob <- predict(final_model, newx = x_train, type = "response")
+
+# ROC
+roc_train <- roc(y_train, as.numeric(train_prob), quiet = TRUE)
+
+opt_thresh <- coords(roc_train, "best", ret = "threshold")
+
+opt_thresh_enet <- as.numeric(opt_thresh)
+
+cat("Optimal threshold (training):", round(opt_thresh_enet, 4), "\n")
+
 ################################################################################
 # --- Out-of-sample evaluation -------------------------------------------------
 ################################################################################
@@ -300,7 +363,7 @@ final_model <- glmnet(
 
 
 pred_prob <- predict(final_model, newx = x_test, type = "response")
-pred_class <- ifelse(pred_prob > 0.5, 1, 0)
+pred_class <- ifelse(pred_prob > opt_thresh_enet, 1, 0)
 
 conf_mat <- table(Predicted = pred_class, Actual = y_test)
 accuracy <- mean(pred_class == y_test)
@@ -499,15 +562,15 @@ if (is.na(best_params$max.depth)) {
 
 
 roc_rf <- roc(rf_train_df$Y, predict(final_rf, data = rf_train_df)$predictions[, 2], quiet = TRUE)
-opt_thresh <- coords(roc_rf, "best", ret = "threshold")
-opt_thresh <- as.numeric(opt_thresh)
+opt_thresh_rf <- coords(roc_rf, "best", ret = "threshold")
+opt_thresh_rf <- as.numeric(opt_thresh_rf)
 
 ################################################################################
 # --- Out-of-Sample Evaluation -------------------------------------------------
 ################################################################################
 
 pred_prob_rf <- predict(final_rf, data = rf_test_df)$predictions[, "1"]
-pred_class_rf <- ifelse(pred_prob_rf > opt_thresh, 1, 0)
+pred_class_rf <- ifelse(pred_prob_rf > opt_thresh_rf, 1, 0)
 
 conf_mat_rf <- table(Predicted = pred_class_rf, Actual = rf_test_df$Y)
 accuracy_rf <- mean(pred_class_rf == as.numeric(as.character(rf_test_df$Y)))
@@ -729,7 +792,7 @@ print("Re-calculating final metrics...")
 
 # Elastic Net (enet_final was named 'final_model' in your script)
 enet_pred_prob <- predict(final_model, newx = x_test, type = "response")
-enet_accuracy  <- mean(ifelse(enet_pred_prob > 0.5, 1, 0) == y_true_test)
+enet_accuracy  <- mean(ifelse(enet_pred_prob > opt_thresh_enet, 1, 0) == y_true_test)
 enet_logloss_test <- -mean(y_true_test * log(enet_pred_prob + eps) + (1 - y_true_test) * log(1 - enet_pred_prob + eps))
 # We already have 'enet_roc_obj' from the Elastic Net block, but we re-create it here
 # just in case the block wasn't run.
@@ -737,7 +800,7 @@ enet_roc_obj   <- roc(y_true_test, as.numeric(enet_pred_prob), quiet = TRUE)
 
 # Random Forest (final_rf)
 rf_pred_prob_tuned <- predict(final_rf, data = test_df)$predictions[, 2]
-rf_accuracy_tuned  <- mean(ifelse(rf_pred_prob_tuned > as.numeric(opt_thresh), 1, 0) == y_true_test)
+rf_accuracy_tuned  <- mean(ifelse(rf_pred_prob_tuned > opt_thresh_rf, 1, 0) == y_true_test)
 rf_logloss_test_tuned <- -mean(y_true_test * log(rf_pred_prob_tuned + eps) + (1 - y_true_test) * log(1 - rf_pred_prob_tuned + eps))
 # We already have 'roc_obj_rf_tuned', but re-create for safety.
 rf_roc_obj_tuned   <- roc(y_true_test, rf_pred_prob_tuned, quiet = TRUE)

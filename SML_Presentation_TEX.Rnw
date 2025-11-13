@@ -217,20 +217,8 @@
 \end{frame}
 
 %-------------------------------------------------------
-\begin{frame}{Elastic Net: Tuning Procedure}
-\begin{itemize}
-  \item Grid search over \(\alpha \in [0, 1]\) in steps of 0.05.
-  \item For each \(\alpha\), internal cross-validation via \texttt{cv.glmnet()} selects \(\lambda\).
-  \item For each fold:
-  \begin{enumerate}
-    \item Train model on training window.
-    \item Predict on validation window.
-    \item Record Accuracy and AUC.
-  \end{enumerate}
-  \item The optimal \((\alpha, \lambda)\) combination is chosen by highest mean AUC.
-  \item Final model is refitted on full training data and evaluated out-of-sample.
-\end{itemize}
-\end{frame}
+
+
 
 %-------------------------------------------------------
 \begin{frame}{3. Methodology: Model Assessment Strategy}
