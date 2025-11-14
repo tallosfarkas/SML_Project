@@ -502,27 +502,53 @@ rf_results <- data.frame(
   AUC = numeric()
 )
 
-for (r in 1:nrow(param_grid)) {
+# --- Load parallel libraries ---
+library(doParallel)
+library(foreach)
+
+# --- Setup the parallel cluster ---
+# We'll leave one core free for system stability
+num_cores <- detectCores() - 1
+cl <- makeCluster(num_cores)
+registerDoParallel(cl)
+
+cat(paste("Starting parallel RF tuning on", num_cores, "cores for", nrow(param_grid), "combinations...\n"))
+
+# --- Parallel cross-validation loop ---
+# We replace the outer 'for' loop with 'foreach'
+# .combine = 'rbind' tells foreach to stack the data.frame from each loop into one final data.frame
+# .packages are the libraries each parallel worker needs
+# .export lists the variables from our main R session that each worker needs
+rf_results <- foreach(
+  r = 1:nrow(param_grid),
+  .combine = 'rbind',
+  .packages = c('ranger', 'pROC'),
+  .export = c('param_grid', 'folds', 'y_train', 'rf_train_df')
+) %dopar% {
+  
+  # This is the start of your original loop, running in parallel for each 'r'
   pset <- param_grid[r, ]
+  
+  # NOTE: These printouts will work but may appear jumbled or out of order,
+  # as all parallel workers will try to print at the same time. This is normal.
   cat("\nTesting combination:", r, "of", nrow(param_grid), "\n")
   print(pset)
-
+  
   accuracies <- c()
   aucs <- c()
-
+  
+  # This inner loop over the time-slices runs serially *within* each parallel task
   for (i in seq_along(folds$train)) {
     train_idx <- folds$train[[i]]
     val_idx   <- folds$test[[i]]
-
+    
     if (length(unique(y_train[val_idx])) < 2) next  # skip degenerate folds
-
-    # skip folds with only one class
-    if (length(unique(rf_train_df$Y[val_idx])) < 2) next
-
+    if (length(unique(rf_train_df$Y[val_idx])) < 2) next # skip folds with only one class
+    
     df_train <- rf_train_df[train_idx, ]
     df_val   <- rf_train_df[val_idx, ]
-
-    # Conditional argument for max.depth
+    
+    # Conditional argument for max.depth 
     if (is.na(pset$max.depth)) {
       rf_model <- ranger(
         Y ~ .,
@@ -551,34 +577,41 @@ for (r in 1:nrow(param_grid)) {
         seed = 123
       )
     }
-
-    # Predict probabilities and classes
+    
+    # Predict probabilities and classes (IDENTICAL to your code)
     pred_prob <- predict(rf_model, data = df_val)$predictions[, 2]
     pred_class <- ifelse(pred_prob > 0.5, 1, 0)
-
+    
     acc <- mean(pred_class == df_val$Y)
     auc_val <- tryCatch({
       roc_obj <- roc(df_val$Y, pred_prob, quiet = TRUE)
       as.numeric(auc(roc_obj))
     }, error = function(e) NA)
-
+    
     accuracies <- c(accuracies, acc)
     aucs <- c(aucs, auc_val)
-  }
-
-  rf_results <- rbind(rf_results, data.frame(
+  } # End of inner 'for' loop (folds)
+  
+  # This data.frame is the return value for this single 'foreach' iteration
+  data.frame(
     mtry = pset$mtry,
     min.node.size = pset$min.node.size,
     max.depth = pset$max.depth,
     sample.fraction = pset$sample.fraction,
     Accuracy = mean(accuracies, na.rm = TRUE),
     AUC = mean(aucs, na.rm = TRUE)
-  ))
-}
+  )
+} # End of parallel 'foreach' loop
 
-##### --- Select best hyperparameter combo ----------------------------------------
+# --- Stop the cluster ---
+stopCluster(cl)
+
+cat("\nParallel Random Forest tuning complete.\n")
+
+# --- Select best hyperparameter combo (Your original code resumes here) ---
 best_row <- rf_results[which.max(rf_results$AUC), ]
 best_params <- best_row[1:4]
+
 
 cat("\nBest Parameters:\n")
 print(best_params)
