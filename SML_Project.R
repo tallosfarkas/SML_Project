@@ -1,6 +1,6 @@
 #### SML Project ####
 
-### Packages ###################################################################
+##### Packages ###################################################################
 required_packages <- c(
   "xts","zoo","frenchdata","mistr","ggplot2","quantmod","dplyr","purrr",
   "lubridate","stringr","tidyr","stats","gt","PerformanceAnalytics","kableExtra",
@@ -13,7 +13,7 @@ missing <- setdiff(required_packages, installed)
 if (length(missing) > 0) install.packages(missing, dependencies = TRUE)
 invisible(lapply(required_packages, library, character.only = TRUE))
 
-### Helper: safe FRED getter ###################################################
+##### Helper: safe FRED getter ###################################################
 get_fred_safe <- function(sym, from) {
   tryCatch(
     quantmod::getSymbols(sym, src = "FRED", from = from, auto.assign = FALSE),
@@ -21,12 +21,12 @@ get_fred_safe <- function(sym, from) {
   )
 }
 
-### Parameters #################################################################
+##### Parameters #################################################################
 start <- as.Date("1950-01-01")
 end   <- Sys.Date()
 
 
-### Market data (S&P 500) ######################################################
+##### Market data (S&P 500) ######################################################
 sp500_xts <- quantmod::getSymbols("^GSPC", from = start, to = end,
                                   src = "yahoo", auto.assign = FALSE)
 
@@ -53,7 +53,7 @@ sp500_df <- data.frame(date = index(sp500_first), coredata(sp500_first)) %>%
     UP_DOWN     = if_else(price >= price_lag1, "Up", "Down")
   )
 
-### Macro data (FRED + NBER) ###################################################
+##### Macro data (FRED + NBER) ###################################################
 cpi_xts <- get_fred_safe("CPIAUCSL", from = start)
 fed_xts <- get_fred_safe("FEDFUNDS", from = start)
 
@@ -77,7 +77,7 @@ macro_df <- macro_df %>%
   select(year_month, CPI_lag, FedFundsRate_lag, NBER_lag)
 
 
-### VIX and Daily News Sentiment ##########################################
+##### VIX and Daily News Sentiment ##########################################
 
 # 1. Volatility Index (VIX)
 vix_xts <- getSymbols("^VIX", from = start, to = end,
@@ -121,9 +121,9 @@ dnsi_df <- dnsi_raw %>%
 
 
 
-################################################################################
-# --- Merge everything for final data set  -------------------------------------
-################################################################################
+################################################################################ divider ###
+##### --- Merge everything for final data set  -------------------------------------
+################################################################################ divider ###
 
 final_data_df <- macro_df %>%
   left_join(sp500_df, by = "year_month") %>%
@@ -156,9 +156,9 @@ ggsave(
 )
 
 
-################################################################################
-# --- Analyse Imbalance in the underlying data set  ----------------------------
-################################################################################
+################################################################################ divider ###
+##### --- Analyse Imbalance in the underlying data set  ----------------------------
+############################################################################# divider ###
 
 imbalance_df <- final_data_df %>%
   mutate(UP_DOWN = factor(UP_DOWN, levels = c("Down","Up")))
@@ -186,12 +186,12 @@ ggsave("imbalance_plot.png",
        height = 6,
        dpi = 300)
 
-################################################################################
-################################################################################
+################################################################################ divider ###
+################################################################################ divider ###
 
 ### --- Logistic Regression with Elastic Net --- ###################
 
-# --- Prepare data -------------------------------------------------------------
+##### --- Prepare data -------------------------------------------------------------
 
 # We remove non-predictor variables and create interaction terms between the key
 # macro and news variables
@@ -208,9 +208,9 @@ data_model_enet <- final_data_df %>%
   ) %>%
   tidyr::drop_na()
 
-# --- Chronological 70/30 split -----------------------------------------------
+##### --- Chronological 70/30 split -----------------------------------------------
 
-# We decided to use the first 30% of our time series data set for the calibrtion of the
+# We decided to use the first 70% of our time series data set for the calibrtion of the
 # hyperparamter and coefficient estimation.
 # Since it is a time series, we cannot randomize.
 
@@ -220,7 +220,7 @@ split_point <- floor(0.7 * n)
 train_df_enet <- data_model_enet[1:split_point, ]
 test_df_enet  <- data_model_enet[(split_point + 1):n, ]
 
-# --- Matrices for glmnet ------------------------------------------------------
+##### --- Matrices for glmnet ------------------------------------------------------
 x_train <- model.matrix(Y ~ . - 1, data = train_df_enet)
 y_train <- train_df_enet$Y
 
@@ -228,15 +228,15 @@ x_test  <- model.matrix(Y ~ . - 1, data = test_df_enet)
 y_test  <- test_df_enet$Y
 
 
-################################################################################
-# --- Time-Series Cross-Validation for Alpha and Lambda ------------------------
-################################################################################
+################################################################################ divider ###
+##### --- Time-Series Cross-Validation for Alpha and Lambda ------------------------
+################################################################################ divider ###
 
 # For the CV, we test alphas (mixture of lasso and ridge) between [0,1], with using cv, for each
 # alpha to define for each alphas the optimal lambda.
 # createTimeSlices() creates rolling time windows
 
-### --- Time-Series CV Folds ---------------------------------------------------
+##### --- Time-Series CV Folds ---------------------------------------------------
 
 window_length <- 60   # 5 years of monthly data
 horizon       <- 12   # 1-year validation
@@ -248,7 +248,7 @@ folds <- createTimeSlices(
   fixedWindow   = TRUE
 )
 
-### --- Grid Search ------------------------------------------------------------
+##### --- Grid Search ------------------------------------------------------------
 # We'll perform a small grid search for alpha and lambda
 
 # Lambda grid (log-spaced)
@@ -257,13 +257,13 @@ lambda_grid <- exp(seq(log(1e-4), log(10), length.out = 40))
 # Alpha grid: ridge -> lasso spectrum
 alpha_grid  <- seq(0, 1, by = 0.1)
 
-### --- Storage ----------------------------------------------------------------
+##### --- Storage ----------------------------------------------------------------
 
 cv_results <- data.frame(alpha = numeric(), lambda = numeric(),
                          Accuracy = numeric(), AUC = numeric())
 
 
-### --- Time-Series CV ---------------------------------------------------------
+##### --- Time-Series CV ---------------------------------------------------------
 
 # The loop performes "nested" time-series cross validation
 
@@ -331,7 +331,7 @@ for (a in alpha_grid) {
 }
 
 
-# --- Select best alpha & lambda -----------------------------------------------
+##### --- Select best alpha & lambda -----------------------------------------------
 
 # We then pick the alpha & lambda combination that gave the the highest mean AUC
 # (Area under the curve) i.e. the area under the ROC curve.
@@ -342,9 +342,9 @@ best_lambda  <- best_row$lambda
 
 cat("\nBest alpha:", best_alpha, "\nBest lambda:", best_lambda, "\n")
 
-################################################################################
-# --- Refit on full training data ---------------------------------------------
-################################################################################
+################################################################################ divider ###
+##### --- Refit on full training data ---------------------------------------------
+################################################################################ divider ###
 
 # The last step of the model fitting is the training of the final model on the
 # entire training sample to receive the final coefficients using the chosen alpha
@@ -358,7 +358,7 @@ final_model <- glmnet(
   lambda = best_lambda
 )
 
-# --- Threshold Tuning due to imbalances in the underlying data classes --------
+##### --- Threshold Tuning due to imbalances in the underlying data classes --------
 
 # Train-set probability predictions
 train_prob <- predict(final_model, newx = x_train, type = "response")
@@ -372,9 +372,9 @@ opt_thresh_enet <- as.numeric(opt_thresh)
 
 cat("Optimal threshold (training):", round(opt_thresh_enet, 4), "\n")
 
-################################################################################
-# --- Out-of-sample evaluation -------------------------------------------------
-################################################################################
+################################################################################ divider ###
+##### --- Out-of-sample evaluation -------------------------------------------------
+################################################################################ divider ###
 
 # For the OoS prediction, we use our final_model to predict the probabilities on the
 # unseen test data. Finally, we just convert probabilities to a binary class predictions
@@ -400,7 +400,7 @@ png("roc_enet.png", width = 800, height = 600, res = 120)
 plot(roc_obj_enet, col = "blue", main = "ROC Curve - Out-of-sample (Elastic Net)")
 dev.off()
 
-# --- Extract coefficients at best lambda and alpha ----------------------------
+##### --- Extract coefficients at best lambda and alpha ----------------------------
 
 # Because coefficients are shrunk and selected jointly through the penalty parameter,
 # classical inference is not valid. Therefore, significance testing is replaced by
@@ -454,9 +454,9 @@ ggsave(
 # num.tree = 1000
 # splitrule = gini
 
-# --- Create model matrices for R. Forrest and Gradient Boosting ---------------
+##### --- Create model matrices for R. Forrest and Gradient Boosting ---------------
 
-# --- Prepare data (no interactions) -------------------------------------------
+##### --- Prepare data (no interactions) -------------------------------------------
 final_data_df$Y <- ifelse(final_data_df$UP_DOWN == "Up", 1, 0)
 
 # Remove unused columns but keep the original lagged predictors
@@ -464,20 +464,20 @@ data_model_rf <- final_data_df %>%
   select(-UP_DOWN, -year_month) %>%
   tidyr::drop_na()
 
-# --- Chronological 70/30 split -----------------------------------------------
+##### --- Chronological 70/30 split -----------------------------------------------
 n <- nrow(data_model_rf)
 split_point <- floor(0.7 * n)
 
 rf_train_df <- data_model_rf[1:split_point, ]
 rf_test_df  <- data_model_rf[(split_point + 1):n, ]
 
-# --- Factorize target for classification -------------------------------------
+##### --- Factorize target for classification -------------------------------------
 rf_train_df$Y <- factor(rf_train_df$Y, levels = c(0, 1))
 rf_test_df$Y  <- factor(rf_test_df$Y, levels = c(0, 1))
 
-################################################################################
-# --- Time-Series Cross-Validation for Hyperparameter --------------------------
-################################################################################
+################################################################################ divider ###
+##### --- Time-Series Cross-Validation for Hyperparameter --------------------------
+################################################################################ divider ###
 
 # we can use the folds from the elastic net tuning here again
 # First create the hyperparameter tuning grid:
@@ -491,7 +491,7 @@ param_grid <- expand.grid(
 )
 nrow(param_grid)
 
-# --- Cross-validation loop as before ------------------------------------------
+##### --- Cross-validation loop as before ------------------------------------------
 
 rf_results <- data.frame(
   mtry = numeric(),
@@ -576,7 +576,7 @@ for (r in 1:nrow(param_grid)) {
   ))
 }
 
-# --- Select best hyperparameter combo ----------------------------------------
+##### --- Select best hyperparameter combo ----------------------------------------
 best_row <- rf_results[which.max(rf_results$AUC), ]
 best_params <- best_row[1:4]
 
@@ -585,9 +585,9 @@ print(best_params)
 
 # If max.depth = NA it means, we should not restrict the tree depth in our model
 
-################################################################################
-# --- Refit on full training data ---------------------------------------------
-################################################################################
+################################################################################ divider ###
+##### --- Refit on full training data ---------------------------------------------
+################################################################################ divider ###
 
 if (is.na(best_params$max.depth)) {
   final_rf <- ranger(
@@ -624,9 +624,9 @@ roc_rf <- roc(rf_train_df$Y, predict(final_rf, data = rf_train_df)$predictions[,
 opt_thresh_rf <- coords(roc_rf, "best", ret = "threshold")
 opt_thresh_rf <- as.numeric(opt_thresh_rf)
 
-################################################################################
-# --- Out-of-Sample Evaluation -------------------------------------------------
-################################################################################
+################################################################################ divider ###
+##### --- Out-of-Sample Evaluation -------------------------------------------------
+################################################################################ divider ###
 
 pred_prob_rf <- predict(final_rf, data = rf_test_df)$predictions[, "1"]
 pred_class_rf <- ifelse(pred_prob_rf > opt_thresh_rf, 1, 0)
@@ -639,7 +639,7 @@ cat("\nConfusion Matrix (RF):\n")
 print(conf_mat_rf)
 cat("\nOut-of-sample Accuracy (RF):", round(accuracy_rf, 3), "\n")
 
-# --- ROC/AUC plot -------------------------------------------------------------
+##### --- ROC/AUC plot -------------------------------------------------------------
 if (length(unique(rf_test_df$Y)) == 2) {
   roc_obj_rf_tuned <- roc(rf_test_df$Y, pred_prob_rf)
   cat("\nTest AUC:", round(auc(roc_obj_rf_tuned), 3), "\n")
@@ -649,7 +649,7 @@ if (length(unique(rf_test_df$Y)) == 2) {
   cat("\nROC skipped: test set has only one class.\n")
 }
 
-# --- Feature Importance -------------------------------------------------------
+##### --- Feature Importance -------------------------------------------------------
 importance_df <- data.frame(
   Variable = names(final_rf$variable.importance),
   Importance = final_rf$variable.importance
@@ -684,18 +684,22 @@ ggplot(head(interaction_strength, 10),
   theme_minimal()
 
 
-################################################################################
-################################################################################
-
+################################################################################ divider ###
+################################################################################ divider ###
+### --- Gradient Boosting Machine (GBM) --- ###################
 # We need the 'gbm' package
 if (!"gbm" %in% installed) install.packages("gbm")
 library(gbm)
 
+# [OPTIMIZED] Load parallel packages
+library(doParallel)
+library(foreach)
+
 # --- Parameter grid to tune for GBM ---
 param_grid_gbm <- expand.grid(
   n.trees = c(100, 200, 300),
-  interaction.depth = c(1, 2, 3), # As in slides07 (1=additive, >1=interactions)
-  shrinkage = c(0.01, 0.1)     # Learning rate
+  interaction.depth = c(1, 2, 3), # As in slides07 (1=additive, >1=interactions) [cite: 1432]
+  shrinkage = c(0.01, 0.1)      # Learning rate [cite: 1445]
 )
 
 # --- Rolling-window tuning (for gbm) ---
@@ -707,63 +711,80 @@ horizon <- 12
 results_gbm <- data.frame()
 eps <- 1e-9 # for log-loss stability
 
-print("Starting GBM time-series tuning...")
+print("Starting GBM time-series tuning (in parallel)...")
+
+# [OPTIMIZED] Setup parallel backend
+cl <- makeCluster(detectCores() - 1)
+registerDoParallel(cl)
+
 set.seed(123)
 for (i in seq(window_size, n_train - horizon, by = horizon)) {
-
+  
   # Get window data (dataframes)
   train_window <- rf_train_df[1:i, ]
   test_window <- rf_train_df[(i + 1):(i + horizon), ]
-
+  
   # --- Prepare data for gbm ---
   # gbm for "bernoulli" requires a 0/1 numeric target
   train_window$Y_num <- as.numeric(as.character(train_window$Y))
   test_window$Y_num <- as.numeric(as.character(test_window$Y))
-
+  
   # Skip invalid test windows
   if (nrow(test_window) == 0 || length(unique(test_window$Y_num)) < 2) next
-
+  
   # Create a formula that uses Y_num and excludes the factor Y
   predictors <- names(train_window)[!names(train_window) %in% c("Y", "Y_num")]
   gbm_formula <- as.formula(paste("Y_num ~", paste(predictors, collapse = " + ")))
-
-  for (j in 1:nrow(param_grid_gbm)) {
+  
+  # [OPTIMIZED] Parallelize the *inner* loop (the grid search)
+  # We export necessary packages and objects to the parallel workers
+  results_j <- foreach(
+    j = 1:nrow(param_grid_gbm), 
+    .combine = 'rbind', 
+    .packages = c('gbm', 'pROC')
+  ) %dopar% {
+    
     p <- param_grid_gbm[j, ]
-
+    
     # Fit the gbm model
     gbm_model <- gbm(
       gbm_formula,
       data = train_window,
-      distribution = "bernoulli", # for 0/1 classification
+      distribution = "bernoulli", # for 0/1 classification [cite: 1258, 1260]
       n.trees = p$n.trees,
       interaction.depth = p$interaction.depth,
       shrinkage = p$shrinkage,
-      n.minobsinnode = 10 # As in slides07, a good default
+      n.minobsinnode = 10 
     )
-
+    
     # Predict on the validation window
     preds <- predict(gbm_model,
                      newdata = test_window,
                      n.trees = p$n.trees,
                      type = "response")
     y_true_window <- test_window$Y_num
-
-    # --- Log-loss (cross-entropy) ---
+    
+    # [cite_start]--- Log-loss (cross-entropy) --- [cite: 3431]
     logloss <- -mean(y_true_window * log(preds + eps) + (1 - y_true_window) * log(1 - preds + eps))
     auc_val <- tryCatch(as.numeric(auc(y_true_window, preds, quiet = TRUE)), error = function(e) NA)
-
-    results_gbm <- rbind(
-      results_gbm,
-      data.frame(
-        n.trees = p$n.trees,
-        interaction.depth = p$interaction.depth,
-        shrinkage = p$shrinkage,
-        LogLoss = logloss,
-        AUC = auc_val
-      )
+    
+    # Return the results for this fold/param combo
+    data.frame(
+      n.trees = p$n.trees,
+      interaction.depth = p$interaction.depth,
+      shrinkage = p$shrinkage,
+      LogLoss = logloss,
+      AUC = auc_val
     )
-  }
-}
+  } # End of parallel foreach loop
+  
+  results_gbm <- rbind(results_gbm, results_j)
+  
+} # End of time-slice loop
+
+# [OPTIMIZED] Stop the parallel cluster
+stopCluster(cl)
+
 print("GBM tuning complete.")
 
 # --- Aggregate across rolling folds ---
@@ -802,6 +823,22 @@ gbm_final <- gbm(
   n.minobsinnode = 10
 )
 
+# --- [ADDED] Threshold Tuning (on Training Data) ---
+# This is the key correction for methodological consistency
+cat("Tuning GBM probability threshold on training data...\n")
+train_prob_gbm <- predict(gbm_final, 
+                          newdata = train_df_gbm, 
+                          n.trees = best_params_gbm$n.trees, 
+                          type = "response")
+
+roc_gbm_train <- roc(train_df_gbm$Y_num, train_prob_gbm, quiet = TRUE)
+opt_thresh_gbm <- coords(roc_gbm_train, "best", ret = "threshold")
+opt_thresh_gbm <- as.numeric(opt_thresh_gbm)
+
+cat("Optimal GBM threshold (training):", round(opt_thresh_gbm, 4), "\n")
+# --- End of ADDED block ---
+
+
 # --- Evaluate on hold-out test set ---
 # Prepare test_df for gbm
 test_df_gbm <- rf_test_df
@@ -812,29 +849,31 @@ gbm_pred_prob <- predict(gbm_final,
                          newdata = test_df_gbm,
                          n.trees = best_params_gbm$n.trees,
                          type = "response")
-gbm_pred_class <- ifelse(gbm_pred_prob > 0.5, 1, 0)
 
-# --- Metrics ---
+# --- [CHANGED] Apply the *tuned* threshold, not 0.5 ---
+gbm_pred_class <- ifelse(gbm_pred_prob > opt_thresh_gbm, 1, 0)
+
+# --- Metrics (These are now calculated correctly) ---
 gbm_conf_mat <- table(Predicted = gbm_pred_class, Actual = y_true_test_gbm)
 gbm_accuracy <- mean(gbm_pred_class == y_true_test_gbm)
 gbm_logloss_test <- -mean(y_true_test_gbm * log(gbm_pred_prob + eps) + (1 - y_true_test_gbm) * log(1 - gbm_pred_prob + eps))
 
-cat("\n--- GBM Final Test Performance ---\n")
+cat("\n--- GBM Final Test Performance (with Tuned Threshold) ---\n")
 cat("\nConfusion Matrix:\n"); print(gbm_conf_mat)
 cat("\nTest Accuracy:", round(gbm_accuracy, 3))
 cat("\nTest Log-Loss:", round(gbm_logloss_test, 4))
 
-# --- ROC/AUC plot ---
+# --- ROC/AUC plot (This was already correct as it uses probabilities) ---
 gbm_roc_obj <- roc(y_true_test_gbm, gbm_pred_prob, quiet = TRUE)
 cat("\nTest AUC:", round(auc(gbm_roc_obj), 3), "\n")
 plot(gbm_roc_obj, col = "darkorange", main = "ROC Curve - Tuned GBM")
 
-# --- Feature Importance ---
+# --- Feature Importance (This was already correct) ---
 cat("\nGBM Feature Importance:\n")
 print(summary(gbm_final, plotit = FALSE))
 
-###############################################################################
-###############################################################################
+############################################################################### divider ###
+############################################################################### divider ###
 
 
 ################ PLOTS & FINAL SUMMARY #############################
