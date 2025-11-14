@@ -684,12 +684,9 @@ if (length(unique(rf_test_df$Y)) == 2) {
   cat("\nROC skipped: test set has only one class.\n")
 }
 
-<<<<<<< HEAD
 
-# --- Feature Importance -------------------------------------------------------
-=======
 ##### --- Feature Importance -------------------------------------------------------
->>>>>>> eab4ec142ac9b338e7f7a5e3fd7727c895deca35
+
 importance_df <- data.frame(
   Variable = names(final_rf$variable.importance),
   Importance = final_rf$variable.importance
@@ -909,14 +906,13 @@ print(summary(gbm_final, plotit = FALSE))
 ############################################################################### divider ###
 ############################################################################### divider ###
 
-
 ################ PLOTS & FINAL SUMMARY #############################
 
 # --- 1. Create Final Objects for Comparison ---
 
 # --- FIX: Define y_true_test (the 0/1 numeric test target) ---
 # This ensures the true test set target is available
-y_true_test <- as.numeric(as.character(test_df$Y))
+y_true_test <- as.numeric(as.character(rf_test_df$Y)) # <-- [FIXED] Was 'test_df'
 
 # --- Re-calculate all metrics from final models ---
 # This makes the script runnable in chunks, as it only needs the final models
@@ -926,41 +922,40 @@ print("Re-calculating final metrics...")
 enet_pred_prob <- predict(final_model, newx = x_test, type = "response")
 enet_accuracy  <- mean(ifelse(enet_pred_prob > opt_thresh_enet, 1, 0) == y_true_test)
 enet_logloss_test <- -mean(y_true_test * log(enet_pred_prob + eps) + (1 - y_true_test) * log(1 - enet_pred_prob + eps))
-# We already have 'enet_roc_obj' from the Elastic Net block, but we re-create it here
-# just in case the block wasn't run.
-enet_roc_obj   <- roc(y_true_test, as.numeric(enet_pred_prob), quiet = TRUE)
+enet_roc_obj    <- roc(y_true_test, as.numeric(enet_pred_prob), quiet = TRUE)
 
 # Random Forest (final_rf)
-rf_pred_prob_tuned <- predict(final_rf, data = test_df)$predictions[, 2]
+rf_pred_prob_tuned <- predict(final_rf, data = rf_test_df)$predictions[, "1"] # <-- [FIXED] Use "1" not 2
 rf_accuracy_tuned  <- mean(ifelse(rf_pred_prob_tuned > opt_thresh_rf, 1, 0) == y_true_test)
 rf_logloss_test_tuned <- -mean(y_true_test * log(rf_pred_prob_tuned + eps) + (1 - y_true_test) * log(1 - rf_pred_prob_tuned + eps))
-# We already have 'roc_obj_rf_tuned', but re-create for safety.
-rf_roc_obj_tuned   <- roc(y_true_test, rf_pred_prob_tuned, quiet = TRUE)
+rf_roc_obj_tuned    <- roc(y_true_test, rf_pred_prob_tuned, quiet = TRUE)
 
-
-length(rf_pred_prob_tuned)
-length(y_true_test)
 
 # Gradient Boosting (gbm_final)
 # (Must re-create test_df_gbm as it's not saved globally)
-test_df_gbm <- test_df
+test_df_gbm <- rf_test_df # <-- [FIXED] Was 'test_df'
 test_df_gbm$Y_num <- as.numeric(as.character(test_df_gbm$Y))
 
 gbm_pred_prob <- predict(gbm_final,
                          newdata = test_df_gbm,
                          n.trees = best_params_gbm$n.trees,
                          type = "response")
-gbm_accuracy  <- mean(ifelse(gbm_pred_prob > 0.5, 1, 0) == y_true_test)
+# --- [FIXED] Use the tuned threshold for GBM Accuracy ---
+gbm_accuracy  <- mean(ifelse(gbm_pred_prob > opt_thresh_gbm, 1, 0) == y_true_test) 
 gbm_logloss_test <- -mean(y_true_test * log(gbm_pred_prob + eps) + (1 - y_true_test) * log(1 - gbm_pred_prob + eps))
-# We already have 'gbm_roc_obj', but re-create for safety.
-gbm_roc_obj   <- roc(y_true_test, gbm_pred_prob, quiet = TRUE)
+gbm_roc_obj    <- roc(y_true_test, gbm_pred_prob, quiet = TRUE)
 
 
 # --- 2. Save EDA Plot ---
 print("Saving EDA plot...")
 png("ggpairs_plot.png", width = 1200, height = 1000, res = 100)
 # Create the subset for a cleaner plot
-eda_subset <- data_model %>%
+# --- [FIXED] ---
+# Start from 'data_model_rf' which exists. 
+# Also, need to add 'DNSI_VIX_lag' from 'data_model_enet' if you want to plot it
+# Easiest fix is to use the RF data frame and an interaction it contains.
+# Let's just use the 'data_model_rf' columns
+eda_subset <- data_model_rf %>% 
   mutate(UP_DOWN = factor(Y, levels = c(0, 1), labels = c("Down", "Up"))) %>%
   select(
     UP_DOWN,
@@ -968,7 +963,7 @@ eda_subset <- data_model %>%
     FedFundsRate_lag,
     VIX_change_lag,
     DNSI_change_lag,
-    DNSI_VIX_lag
+    NBER_lag # Use another variable from data_model_rf
   )
 print(
   GGally::ggpairs(
@@ -1055,7 +1050,7 @@ final_summary <- data.frame(
   Test_Accuracy = c(
     enet_accuracy,
     rf_accuracy_tuned,
-    gbm_accuracy
+    gbm_accuracy # This now uses the tuned threshold
   ),
   Test_LogLoss = c(
     enet_logloss_test,
@@ -1083,3 +1078,4 @@ final_summary %>%
   gtsave("final_summary_table.png")
 
 print("Final summary table saved as final_summary_table.png")
+
