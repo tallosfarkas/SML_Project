@@ -5,7 +5,7 @@ required_packages <- c(
   "xts","zoo","frenchdata","mistr","ggplot2","quantmod","dplyr","purrr",
   "lubridate","stringr","tidyr","stats","gt","PerformanceAnalytics","kableExtra",
   "knitr","broom","tibble","tidyquant","tidymodels","glmnet","ranger","doParallel",
-  "GGally","readxl","pROC","caret"
+  "GGally","readxl","pROC","caret","randomForestExplainer"
 )
 
 installed <- rownames(installed.packages())
@@ -707,7 +707,6 @@ importance_df %>%
 
 # --- Interaction strength
 
-install.packages("randomForestExplainer")
 library(randomForestExplainer)
 
 
@@ -1078,4 +1077,38 @@ final_summary %>%
   gtsave("final_summary_table.png")
 
 print("Final summary table saved as final_summary_table.png")
+
+
+
+
+
+
+# --- Save GBM Feature Importance Plot (Robust ggplot2 Method) ---
+
+# 1. Get the feature importance data as a data frame
+gbm_imp_data <- gbm::summary.gbm(gbm_final, plotit = FALSE)
+
+# 2. Create the plot using ggplot2
+#    - aes(x = reorder(var, rel.inf)) automatically sorts the bars
+#    - coord_flip() makes it a horizontal bar chart
+gbm_imp_plot <- ggplot(gbm_imp_data, aes(x = reorder(var, rel.inf), y = rel.inf)) +
+  geom_col(fill = "darkblue") +
+  coord_flip() +
+  labs(
+    title = "GBM Feature Importance",
+    x = "Variable",
+    y = "Relative Influence"
+  ) +
+  theme_minimal()
+
+# 3. Save the plot using ggsave (handles margins automatically)
+ggsave(
+  filename = "gbm_var_imp_plot.png",
+  plot = gbm_imp_plot,
+  width = 8,
+  height = 5,
+  dpi = 100
+)
+
+print("GBM feature importance plot saved.")
 

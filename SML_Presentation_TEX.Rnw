@@ -135,7 +135,7 @@
   \begin{itemize}
     \item Random $k$-fold CV assumes i.i.d.\ data.
     \item Time-series data exhibit autocorrelation $\Rightarrow$ temporal dependence.
-    \item Random shuffling lets the model ``see the future'' $\Rightarrow$ data leakage and over-optimism.
+    \item Random shuffling lets the model see the future $\Rightarrow$ data leakage and over-optimism.
   \end{itemize}
 
   \vspace{0.4em}
@@ -444,34 +444,268 @@ Predicted 1   & 15       & 63       \\
 
 
 
+
+
 %-------------------------------------------------------
-%-------------------------------------------------------
-\begin{frame}{3. Methodology: Model Assessment Strategy}
-\framesubtitle{The most critical methodological slide}
-
-\begin{block}{The Problem: Time-Series Data}
-Standard \(K\)-fold CV shuffles data randomly, “peeking into the future” and violating temporal order.
-This leads to overly optimistic results.
-\end{block}
-
-\pause
-
-\begin{block}{Our Solution: Two-Level Chronological Split}
+\begin{frame}{Gradient Boosting Machine (GBM)}
+% --- FONT CHANGED ---
+\footnotesize 
+\textbf{Model Intuition:}
 \begin{itemize}
-  \item \textbf{Level 1: Train/Test Split (for Assessment)}
-  \begin{itemize}
-    \item Chronological 70/30 split.
-    \item \textbf{Train:} 1990–2014 (used for tuning).
-    \item \textbf{Test:} 2015–2025 (used once for final evaluation).
-  \end{itemize}
-  \pause
-  \item \textbf{Level 2: Rolling-Window CV (for Tuning)}
-  \begin{itemize}
-    \item Within the 70\% training set, perform rolling-window validation.
-    \item Simulates real-world use: train on past, predict the future.
-  \end{itemize}
+    \item A powerful \textbf{boosting} ensemble method, as discussed in class.
+    \item It builds trees \textbf{sequentially}, not in parallel like Random Forest.
+    \item Each new, simple tree (a "weak learner") is trained on the residuals (the errors) of the previous trees.
+    \item It's a "slow" learner that "boosts" the signal over many iterations, fitting an additive model.
+    \item We use \texttt{distribution = "bernoulli"} for binary classification, which optimizes the deviance (log-loss).
 \end{itemize}
-\end{block}
+
+\vspace{0.3cm}
+
+\textbf{Tuned Hyperparameters (from Time-Series CV):}
+\begin{itemize}
+    \item \texttt{n.trees = 200} (The number of iterations $M$).
+    \item \texttt{interaction.depth = 1} (Tree size $J=1$, making this an additive model with no interactions).
+    \item \texttt{shrinkage = 0.01} (The learning rate $\nu$, for regularization).
+\end{itemize}
+\end{frame}
+
+%-------------------------------------------------------
+\begin{frame}{GBM: Out-of-Sample Performance and Importance}
+
+\begin{columns}[T, totalwidth=\textwidth]
+
+% Left Column: Performance
+\begin{column}{0.5\textwidth}
+% --- FONT CHANGED ---
+\footnotesize 
+\textbf{Predictive performance (test set):}
+% --- FONT CHANGED ---
+\scriptsize{
+\begin{itemize}
+    \item Accuracy: \textbf{0.674}
+    \item AUC: \textbf{0.783}
+    \item Log-Loss: \textbf{0.5531}
+    \item Tuned Threshold: \textbf{0.6962} (via training ROC)
+\end{itemize}
+}
+
+% --- FONT CHANGED ---
+\footnotesize{\textbf{Confusion matrix:}}
+% --- FONT CHANGED ---
+\scriptsize{
+\begin{center}
+% --- This data is from your R output ---
+\begin{tabular}{c|cc}
+              & Actual 0 & Actual 1 \\
+\hline
+Predicted 0   & 33       & 31       \\
+Predicted 1   & 11       & 54       \\
+\end{tabular}
+\end{center}
+}
+
+% --- FONT CHANGED ---
+\footnotesize{\textbf{Interpretation:}}
+% --- FONT CHANGED ---
+\scriptsize{
+\begin{itemize}
+    \item \textbf{Specificity}: $33 / (33 + 11) \approx \textbf{75\%}$
+    \item \textbf{Sensitivity}: $54 / (54 + 31) \approx \textbf{64\%}$
+    \item The additive GBM model shows a good balance, effectively capturing both "Up" and "Down" markets.
+\end{itemize}
+}
+\end{column}
+
+% Right Column: Feature Importance Plot
+\begin{column}{0.5\textwidth}
+\centering{
+    % --- This assumes you ran the R command to create the plot ---
+    \includegraphics[width=0.8\textwidth]{gbm_var_imp_plot.png}
+}
+
+% --- FONT CHANGED ---
+\footnotesize{\textbf{Feature Importance Interpretation:}}
+% --- FONT CHANGED ---
+\scriptsize{
+\begin{itemize}
+    \item The model is \textbf{dominated} by a single predictor: \texttt{VIX\_change\_lag} (73.6\% relative influence).
+    \item The best-tuned model was additive (\texttt{interaction.depth = 1}), so it only finds main effects.
+    \item Other macro (\texttt{CPI\_lag}) and momentum (\texttt{lag3\_return}) features provide minor corrective adjustments to the main volatility signal.
+\end{itemize}
+}
+\end{column}
+
+\end{columns}
+\end{frame}
+
+
+
+
+
+
+
+%-------------------------------------------------------
+%-------------------------------------------------------
+\begin{frame}{Final Model Comparison}
+\frametitle{Final Model Comparison}
+
+\begin{columns}[T, totalwidth=\textwidth]
+ % Left: Combined ROC Plot
+ \begin{column}{0.5\textwidth}
+    \centering{
+        % This is the plot you provided
+        \includegraphics[width=\textwidth]{combined_roc_plot.png}
+    }
+    \captionof{figure}{\footnotesize Combined ROC curves on the hold-out test set.}
+ \end{column}
+
+ % Right: Summary Table
+ \begin{column}{0.5\textwidth}
+    \centering{
+        % This is the table you provided
+        \includegraphics[width=0.9\textwidth]{final_summary_table.png}
+    }
+    
+    % --- [FONT CHANGED] --- % Add a little space
+    \footnotesize\textbf{Final performance metrics on the hold-out test set}
+    \begin{footnotesize} % Start even smaller font for the list
+    \begin{itemize}
+        \item All models performed significantly better than chance (all AUC greater than 0.75).
+        \item The linear \textbf{Elastic Net} had the highest Test AUC (0.790), narrowly beating the GBM (0.783).
+        \item The \textbf{Random Forest} had the highest Test Accuracy (0.713), but the lowest AUC.
+        \item This suggests the regularized linear model was best at ranking probabilities, while the RF was best at classification after threshold tuning.
+    \end{itemize}
+    \end{footnotesize} % End smaller font
+ \end{column}
+\end{columns}
+
+\end{frame}
+
+
+%-------------------------------------------------------
+\begin{frame}{Conclusion}
+\frametitle{Conclusion}
+
+\textbf{What We Did:}
+% --- [FIXED] Removed blank lines between \item commands ---
+\begin{itemize}
+    \item We built 3 distinct models (Regularized GLM, Bagging, Boosting) to predict S\&P 500 direction.
+    \item We correctly used a \textbf{rolling-window cross-validation} for hyperparameter tuning to respect the time-series nature of the data.
+    \item We addressed \textbf{class imbalance} by tuning the probability threshold on the training set (Youden's J).
+\end{itemize}
+
+\vspace{0.3cm}
+
+\textbf{What We Found:}
+\begin{itemize}
+    \item The \textbf{Elastic Net (Tuned)} was the winning model based on our primary metric, Test AUC (0.790).
+    % --- [FIXED] Escaped the underscores ---
+    \item All models found that \textbf{volatility} (e.g., `VIX\_change\_lag`) and \textbf{momentum} (e.g., `lag1\_return`) were highly predictive.
+    \item Methodology is critical: standard CV would have failed, and using a 0.5 threshold would have been misleading.
+\end{itemize}
+
+\vspace{0.3cm}
+\end{frame}
+
+
+%-------------------------------------------------------
+% THANK YOU SLIDE
+%-------------------------------------------------------
+\begin{frame}
+\frametitle{} % No title on this slide
+
+\vfill % Pushes the content to the vertical center
+\begin{center}
+    % You can make the "Thank you" text larger
+    \Huge{\textbf{Thank you!}}
+    
+    \vspace{1cm} % Adds some space
+    
+    \Large{Questions \& Discussion}
+\end{center}
+\vfill % Balances the vertical centering
+
+\end{frame}
+
+
+
+%-------------------------------------------------------
+% APPENDIX SLIDE
+%-------------------------------------------------------
+\begin{frame}
+\frametitle{Appendix: Hyperparameter Grids}
+\footnotesize
+
+\textbf{Random Forest Grid:}
+\begin{itemize}
+    \item \texttt{mtry}
+    \item \texttt{min.node.size}
+    \item \texttt{max.depth}
+    \item \texttt{sample.fraction}
+\end{itemize}
+\textit{Total combinations tested: 400}
+
+
+\vspace{0.5cm}
+
+\textbf{Gradient Boosting (GBM) Grid:}
+\begin{itemize}
+    \item \texttt{n.trees}
+    \item \texttt{interaction.depth}
+    \item \texttt{shrinkage}
+\end{itemize}
+\textit{Total combinations tested: 18}
+
+\end{frame}
+
+%-------------------------------------------------------
+% BIBLIOGRAPHY / REFERENCES SLIDE
+%-------------------------------------------------------
+\begin{frame}
+\frametitle{References}
+\footnotesize
+
+% The \bibitem command is used for each entry.
+% The [1], [2], etc., is the label.
+\begin{thebibliography}{99}
+
+  \bibitem{cochrane}
+  Cochrane, John H. (2005).
+  \textit{Asset Pricing}.
+  Princeton University Press.
+
+  \bibitem{fred}
+  Federal Reserve Economic Data (FRED).
+  \textit{St. Louis Fed}.
+  Retrieved 2025.
+
+  \bibitem{sf_fed}
+  Federal Reserve Bank of San Francisco.
+  \textit{Daily News Sentiment Index}.
+  Retrieved 2025.
+
+  \bibitem{yahoo}
+  Yahoo Finance.
+  \textit{S\&P 500 (\^GSPC) \& CBOE VIX (\^VIX) Data}.
+  Retrieved 2025.
+  
+  % --- [FIXED] Escaped all the '&' symbols ---
+  \bibitem{glmnet}
+  Friedman, J., Hastie, T., \& Tibshirani, R. (2010).
+  Regularization Paths for Generalized Linear Models via Coordinate Descent.
+  \textit{Journal of Statistical Software, 33}(1), 1-22.
+
+  \bibitem{ranger}
+  Wright, M. N. \& Ziegler, A. (2017).
+  ranger: A Fast Implementation of Random Forests...
+  \textit{Journal of Statistical Software, 77}(1), 1-17.
+  
+  \bibitem{gbm}
+  Ridgeway, G. (2007).
+  Generalized Boosted Models: A guide to the gbm package.
+
+\end{thebibliography}
+
 \end{frame}
 
 \end{document}
