@@ -382,6 +382,120 @@ Predicted 1   & 8        & 47       \\
 \end{frame}
 
 %-------------------------------------------------------
+
+\begin{frame}{Random Forest: Out-of-Sample Performance}
+
+\small
+\textbf{Predictive performance (test set):}
+\footnotesize{
+\begin{itemize}
+  \item Accuracy: \textbf{71.3\%}
+  \item AUC: \textbf{0.753} (strong non-linear discriminative ability)
+  \item RF produces well-calibrated probability scores without threshold tuning
+\end{itemize}
+}
+
+\small{\textbf{Confusion matrix:}}
+\footnotesize{
+\begin{center}
+\begin{tabular}{c|cc}
+              & Actual 0 & Actual 1 \\
+\hline
+Predicted 0   & 29       & 22       \\
+Predicted 1   & 15       & 63       \\
+\end{tabular}
+\end{center}
+}
+
+\small{\textbf{Interpretation:}}
+\footnotesize{
+\begin{itemize}
+  \item \textbf{Specificity} (correct Down predictions):
+        $29/44 \approx \textbf{66\%}$.
+        RF detects a meaningful fraction of negative weeks.
+  \item \textbf{Sensitivity} (correct Up predictions):
+        $63/85 \approx \textbf{74\%}$.
+        RF identifies most positive-return weeks.
+  \item \textbf{Overall}: RF captures important \textbf{nonlinear return patterns},
+        outperforming Elastic Net in accuracy and maintaining a strong AUC.
+\end{itemize}
+}
+
+\end{frame}
+
+%-------------------------------------------------------
+
+\begin{frame}{Random Forest: Minimal Depth, Interpretation, and AUC}
+
+\small
+\begin{columns}[T, totalwidth=\textwidth]
+
+%---------------------------------------------------
+% LEFT COLUMN — Plot + Explanation + Interpretation
+%---------------------------------------------------
+\begin{column}{0.5\textwidth}
+
+\centering{
+  \includegraphics[width=0.78\linewidth]{rf_minimal_depth.png}
+}
+
+{\footnotesize \textbf{Explanation and Interpretation of Minimal Depth}}
+{\scriptsize
+\begin{itemize}
+  \item Min. depth measures how \textbf{early} a variable is used in the tree.
+  \item \textbf{VIX\_change\_lag} is the dominant signal
+  \item \textbf{Lagged returns} are meaningful momentum predictors.
+  \item Overall: RF relies mainly on \textbf{volatility shocks} and
+        \textbf{recent price dynamics}.
+\end{itemize}
+}
+
+\end{column}
+
+%---------------------------------------------------
+% RIGHT COLUMN — ROC + Takeaway
+%---------------------------------------------------
+
+\begin{column}{0.45\textwidth}
+
+\centering{
+  \includegraphics[width=0.8\linewidth]{roc_rf.png}
+}
+
+\raggedright
+
+\vspace{0.1cm}
+
+\footnotesize{ \textbf{AUC}} \\
+\scriptsize{
+\begin{itemize}
+  \item \textbf{AUC = 0.753}
+        $\Rightarrow$ strong discriminative ability and reliable ranking
+        of Up vs.\ Down weeks.
+\end{itemize}
+}
+
+
+\vspace{0.1cm}
+
+\footnotesize{ \textbf{Takeaway}} \\
+\scriptsize{
+\begin{itemize}
+\item Random Forest effectively captures nonlinear interactions between
+\textbf{volatility movements} and \textbf{short-term momentum}.
+\end{itemize}
+}
+
+\end{column}
+
+\end{columns}
+
+\end{frame}
+
+
+
+%-------------------------------------------------------
+%-------------------------------------------------------
 \begin{frame}{3. Methodology: Model Assessment Strategy}
 \framesubtitle{The most critical methodological slide}
 

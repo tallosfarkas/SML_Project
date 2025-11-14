@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.12.2)  13 NOV 2025 13:26
+This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.12.2)  14 NOV 2025 14:06
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1029,9 +1029,28 @@ Overfull \hbox (8.66873pt too wide) detected at line 382
 
  <./enet_coeffs.png> <./roc_enet.png>] [12
 
-] [13
+]
+<rf_minimal_depth.png, id=146, 678.535pt x 486.81876pt>
+File: rf_minimal_depth.png Graphic file (type png)
+<use rf_minimal_depth.png>
+Package pdftex.def Info: rf_minimal_depth.png  used on input line 493.
+(pdftex.def)             Requested size: 169.00389pt x 121.25127pt.
+<roc_rf.png, id=147, 803.0pt x 602.25pt>
+File: roc_rf.png Graphic file (type png)
+<use roc_rf.png>
+Package pdftex.def Info: roc_rf.png  used on input line 493.
+(pdftex.def)             Requested size: 156.00337pt x 117.00177pt.
 
-] [14
+Overfull \vbox (4.79694pt too high) detected at line 493
+ []
+
+[13
+
+ <./rf_minimal_depth.png> <./roc_rf.png>] [14
+
+] [15
+
+] [16
 
 ]
 \tf@nav=\write6
@@ -1053,10 +1072,10 @@ Package rerunfilecheck Info: File `SML_Presentation_TEX.out' has not changed.
 (rerunfilecheck)             Checksum: D41D8CD98F00B204E9800998ECF8427E;0.
  ) 
 Here is how much of TeX's memory you used:
- 23463 strings out of 474116
- 458632 string characters out of 5743682
+ 23485 strings out of 474116
+ 459008 string characters out of 5743682
  1942187 words of memory out of 5000000
- 45304 multiletter control sequences out of 15000+600000
+ 45322 multiletter control sequences out of 15000+600000
  573517 words of font info for 91 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  128i,15n,123p,478b,838s stack positions out of 10000i,1000n,20000p,200000b,200000s
@@ -1079,10 +1098,10 @@ al/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb></usr/local
 exlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/local/tex
 live/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></usr/local/texli
 ve/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt9.pfb>
-Output written on SML_Presentation_TEX.pdf (14 pages, 1475867 bytes).
+Output written on SML_Presentation_TEX.pdf (16 pages, 1572161 bytes).
 PDF statistics:
- 314 PDF objects out of 1000 (max. 8388607)
- 188 compressed objects within 2 object streams
- 29 named destinations out of 1000 (max. 500000)
- 321 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 333 PDF objects out of 1000 (max. 8388607)
+ 199 compressed objects within 2 object streams
+ 33 named destinations out of 1000 (max. 500000)
+ 331 words of extra memory for PDF output out of 10000 (max. 10000000)
 

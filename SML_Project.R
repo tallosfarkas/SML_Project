@@ -643,11 +643,14 @@ cat("\nOut-of-sample Accuracy (RF):", round(accuracy_rf, 3), "\n")
 if (length(unique(rf_test_df$Y)) == 2) {
   roc_obj_rf_tuned <- roc(rf_test_df$Y, pred_prob_rf)
   cat("\nTest AUC:", round(auc(roc_obj_rf_tuned), 3), "\n")
+  png("roc_rf.png", width = 800, height = 600, res = 120)
   plot(roc_obj_rf_tuned, col = "darkgreen",
        main = "ROC Curve - Tuned Random Forest")
+  dev.off()
 } else {
   cat("\nROC skipped: test set has only one class.\n")
 }
+
 
 # --- Feature Importance -------------------------------------------------------
 importance_df <- data.frame(
@@ -656,32 +659,26 @@ importance_df <- data.frame(
 ) %>%
   arrange(desc(Importance))
 
-cat("\nTop 10 Most Important Features:\n")
-print(head(importance_df, 10))
-
-
-# --- Interaction strength using iml (works with ranger)
-
-library(iml)
-library(ggplot2)
-
-# Prepare data and predictor
-X <- train_df %>% dplyr::select(-Y)
-predictor <- Predictor$new(final_rf, data = X, y = train_df$Y, type = "response")
-
-# Compute feature interaction strength
-interaction_obj <- Interaction$new(predictor)
-interaction_strength <- interaction_obj$results %>%
-  dplyr::arrange(desc(.interaction))
-
-# --- Plot top interacting features ---
-ggplot(head(interaction_strength, 10),
-       aes(x = reorder(.feature, .interaction), y = .interaction)) +
-  geom_col(fill = "darkgreen") +
+importance_df %>%
+  top_n(20, Importance) %>%
+  ggplot(aes(x = reorder(Variable, Importance), y = Importance)) +
+  geom_col() +
   coord_flip() +
-  labs(title = "Features by Interaction Strength (Random Forest)",
-       x = "Feature", y = "Interaction Strength") +
+  labs(
+    title = "Top 20 Features — Impurity Importance",
+    x = "Feature",
+    y = "Importance"
+  ) +
   theme_minimal()
+
+# --- Interaction strength
+
+install.packages("randomForestExplainer")
+library(randomForestExplainer)
+
+
+# Prepare random forest explainer data
+rf_expl <- explain_forest(final_rf, interactions = TRUE)
 
 
 ################################################################################
