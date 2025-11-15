@@ -37,6 +37,8 @@
 \end{frame}
 
 %-------------------------------------------------------
+% section
+\section{Introduction and Data}
 \begin{frame}{Motivation}
 \center{
 \begin{quote}
@@ -55,7 +57,7 @@
   \item We focus on predicting whether the S\&P 500 index goes \textbf{Up} or \textbf{Down} next month.
   \item We evaluate statistical learning methods in a time-series context.
   \item Introduce the role of regularization and nonlinear models.
-  \item Compare linear vs. nonlinear classification models (Elastic Net vs. Random Forest).
+  \item Compare linear vs. nonlinear classification models (Elastic Net vs. Random Forest vs. GBM).
 \end{itemize}
 \end{frame}
 
@@ -75,6 +77,9 @@
 \end{itemize}
 \end{frame}
 
+
+% section methdology
+\section{Methodology}
 \begin{frame}{Exploratory Analysis: Feature Relationships}
 
 \begin{columns}[T, totalwidth=\textwidth]
@@ -213,6 +218,9 @@
 \end{frame}
 
 %-------------------------------------------------------
+% section model results
+\section{Model Results}
+\subsection{Elastic Net}
 \begin{frame}{Elastic Net Logistic Regression}
 \small
 \textbf{Model Intuition:}
@@ -332,6 +340,7 @@ Predicted 1   & 8        & 47       \\
 \end{frame}
 
 %-------------------------------------------------------
+\subsection{Random Forest}
 
 \begin{frame}{Random Forest: Out-of-Sample Performance}
 
@@ -445,7 +454,7 @@ Predicted 1   & 15       & 63       \\
 
 
 
-
+\subsection{Gradient Boosting Machine}
 %-------------------------------------------------------
 \begin{frame}{Gradient Boosting Machine (GBM)}
 % --- FONT CHANGED ---
@@ -453,20 +462,24 @@ Predicted 1   & 15       & 63       \\
 \textbf{Model Intuition:}
 \begin{itemize}
     \item A powerful \textbf{boosting} ensemble method, as discussed in class.
-    \item It builds trees \textbf{sequentially}, not in parallel like Random Forest.
-    \item Each new, simple tree (a "weak learner") is trained on the residuals (the errors) of the previous trees.
-    \item It's a "slow" learner that "boosts" the signal over many iterations, fitting an additive model.
-    \item We use \texttt{distribution = "bernoulli"} for binary classification, which optimizes the deviance (log-loss).
+     \item It builds trees \textbf{sequentially}, not in parallel like Random Forest .
+     \item Each new, simple tree (a "weak learner") is trained on the (pseudo-)residuals of the previous trees' errors.
+     \item It's a "slow" learner that "boosts" the signal over many iterations, fitting an additive model.
+     \item We use \texttt{distribution = "bernoulli"} for binary classification, which optimizes the deviance (log-loss).
 \end{itemize}
 
 \vspace{0.3cm}
 
+% --- [MODIFIED SECTION] ---
 \textbf{Tuned Hyperparameters (from Time-Series CV):}
 \begin{itemize}
-    \item \texttt{n.trees = 200} (The number of iterations $M$).
-    \item \texttt{interaction.depth = 1} (Tree size $J=1$, making this an additive model with no interactions).
-    \item \texttt{shrinkage = 0.01} (The learning rate $\nu$, for regularization).
+     \item \texttt{shrinkage = 0.01} (The learning rate $\nu$): A small value provides \textbf{regularization}, forcing the model to learn "slowly".  This is ideal for noisy financial data, as it prevents overfitting and generally gives better results.
+        
+    \item \texttt{n.trees = 200} (The number of iterations $M$): This is the optimal stopping point found by CV.  It is directly balanced with the small shrinkage; a slow learner ($\nu=0.01$) requires more iterations ($M=200$) to fit the signal.
+        
+    \item \texttt{interaction.depth = 1} (Tree size $J$): This was a key finding.  Our CV selected a "stump" (a tree with one split), which restricts the entire GBM to a purely \textbf{additive model}. This suggests the predictive signal in our data is best captured by main effects, not by complex interactions.
 \end{itemize}
+% --- [END OF MODIFIED SECTION] ---
 \end{frame}
 
 %-------------------------------------------------------
@@ -543,7 +556,7 @@ Predicted 1   & 11       & 54       \\
 
 
 
-
+\section{Conclusion}
 %-------------------------------------------------------
 %-------------------------------------------------------
 \begin{frame}{Final Model Comparison}
@@ -583,34 +596,48 @@ Predicted 1   & 11       & 54       \\
 
 
 %-------------------------------------------------------
-\begin{frame}{Conclusion}
-\frametitle{Conclusion}
+\begin{frame}
+\frametitle{Conclusion and Implications}
+
+\footnotesize % Set base font size for the slide
 
 \textbf{What We Did:}
-% --- [FIXED] Removed blank lines between \item commands ---
-\begin{itemize}
+\begin{itemize} \tiny
     \item We built 3 distinct models (Regularized GLM, Bagging, Boosting) to predict S\&P 500 direction.
-    \item We correctly used a \textbf{rolling-window cross-validation} for hyperparameter tuning to respect the time-series nature of the data.
-    \item We addressed \textbf{class imbalance} by tuning the probability threshold on the training set (Youden's J).
+    \item We used a \textbf{rolling-window cross-validation} for hyperparameter tuning to respect the time-series nature of the data.
+    \item We addressed \textbf{class imbalance} by tuning the probability threshold on the training set.
 \end{itemize}
 
-\vspace{0.3cm}
+
 
 \textbf{What We Found:}
-\begin{itemize}
-    \item The \textbf{Elastic Net (Tuned)} was the winning model based on our primary metric, Test AUC (0.790).
-    % --- [FIXED] Escaped the underscores ---
-    \item All models found that \textbf{volatility} (e.g., `VIX\_change\_lag`) and \textbf{momentum} (e.g., `lag1\_return`) were highly predictive.
+\begin{itemize} \tiny
+    \item The \textbf{Elastic Net (Tuned)} was the winning model based on our primary metric, Test AUC (0.790). The GBM (0.783) also showed excellent probability ranking.
+    \item All models confirmed that \textbf{volatility} (e.g., `VIX\_change\_lag`) and \textbf{momentum} (e.g., `lag1\_return`) are the most dominant predictive signals.
     \item Methodology is critical: standard CV would have failed, and using a 0.5 threshold would have been misleading.
 \end{itemize}
 
-\vspace{0.3cm}
+
+
+% --- [NEW SECTION - FONT SIZE ADJUSTED] ---
+\textbf{Implications \& Future Work:}
+\begin{itemize} \tiny % Set font size for this itemize
+    \item \textbf{Can we predict the market?} Our results show that S\&P 500 monthly direction is \textbf{not} a random walk. There is a persistent, predictable statistical edge (AUC greater than 0.75) that our models can capture.
+    
+    \item \textbf{A "Long/Short" Strategy:} This edge could form the basis of a simple allocation strategy:
+        \begin{itemize} \tiny % Can make this inner list even smaller if needed
+            \item Go \textbf{Long} S\&P 500 when our model's probability > tuned threshold.
+            \item Move to \textbf{Cash} (or Short) when probability < tuned threshold.
+        \end{itemize}
+    \item \textbf{Limitations:} This is not a crystal ball. These models must be continuously re-trained, and we did not account for transaction costs, which are critical in a live trading environment.
+\end{itemize}
 \end{frame}
 
 
 %-------------------------------------------------------
 % THANK YOU SLIDE
 %-------------------------------------------------------
+\section*{}
 \begin{frame}
 \frametitle{} % No title on this slide
 
@@ -633,30 +660,234 @@ Predicted 1   & 11       & 54       \\
 % APPENDIX SLIDE
 %-------------------------------------------------------
 \begin{frame}
-\frametitle{Appendix: Hyperparameter Grids}
+\frametitle{Appendix: Full Probabilistic Performance}
 \footnotesize
 
-\textbf{Random Forest Grid:}
+\textbf{Motivation:}
 \begin{itemize}
-    \item \texttt{mtry}
-    \item \texttt{min.node.size}
-    \item \texttt{max.depth}
-    \item \texttt{sample.fraction}
+  \item Proper scoring rules like Brier Score and Log-Loss assess the \textit{quality of the probabilities} themselves, not just the final classification.
+  \item \textbf{Log-Loss} (Deviance) heavily penalizes confident wrong answers (e.g., predicting 0.9 when the answer is 0). This is the metric our GBM optimized.
+  \item \textbf{Brier Score} is the Mean Squared Error of the probability, rewarding well-calibrated forecasts.
 \end{itemize}
-\textit{Total combinations tested: 400}
-
 
 \vspace{0.5cm}
 
-\textbf{Gradient Boosting (GBM) Grid:}
+\begin{center}
+  \includegraphics[width=0.8\linewidth]{appendix_full_summary_table.png}
+\end{center}
+
+\vspace{0.5cm}
+\textbf{Insight:}
 \begin{itemize}
-    \item \texttt{n.trees}
-    \item \texttt{interaction.depth}
-    \item \texttt{shrinkage}
+  \item The \textbf{GBM} model, which directly optimized for Log-Loss ("bernoulli" distribution), achieves the best Log-Loss and Brier Score on the test set.
+  \item This suggests that while the Elastic Net was best at \textit{ranking} (AUC), the GBM produced the most \textit{accurate and well-calibrated probabilities}.
 \end{itemize}
-\textit{Total combinations tested: 18}
+\end{frame}
+
+
+
+
+
+
+\begin{frame}
+\frametitle{Appendix: GBM Partial Dependence Plots}
+\footnotesize
+
+\textbf{Motivation:}
+\begin{itemize}
+  \item As discussed in class, Partial Dependence Plots (PDPs) are used to interpret the model by showing the marginal effect of a feature on the prediction, holding other features constant.
+  \item This shows \textit{how} our most important variables influence the probability of an "Up" month.
+\end{itemize}
+
+\begin{columns}[T, totalwidth=\textwidth]
+
+% --- [MODIFIED COLUMN 1] ---
+  \begin{column}{0.5\textwidth}
+    \centering % <-- REPLACED \begin{center}
+    \includegraphics[width=0.8\textwidth]{appendix_pdp_vix.png}
+    % <-- REMOVED \end{center}
+    
+    \vspace{-0.3cm} % <-- Optional: Add small negative space to pull text up
+    \tiny
+    \textbf{Insight:} The probability of an "Up" month is highest (around 0.7) when the VIX has a small \textit{negative} change (slight calming). A large VIX spike (large positive change) dramatically \textit{decreases} the probability of an "Up" month.
+  \end{column}
+
+% --- [MODIFIED COLUMN 2] ---
+  \begin{column}{0.5\textwidth}
+    \centering % <-- REPLACED \begin{center}
+    \includegraphics[width=0.8\textwidth]{appendix_pdp_lag3.png}
+    % <-- REMOVED \end{center}
+    
+    \vspace{-0.3cm} % <-- Optional: Add small negative space to pull text up
+    \tiny
+    \textbf{Insight:} The model found a momentum effect. The probability of an "Up" month increases as the 3-month lagged return increases from negative to positive, consistent with financial theory.
+  \end{column}
+\end{columns}
 
 \end{frame}
+
+
+
+
+
+
+\begin{frame}
+\frametitle{Appendix: RF Importance (Minimal Depth vs. Gini)}
+\footnotesize
+
+\begin{itemize} \tiny
+  \item \textbf{Gini Importance} (left) measures the average gain in node purity from splitting on a variable. It is fast but can be biased towards continuous or high-cardinality features.
+  \item \textbf{Minimal Depth} (right, from presentation) measures how early a variable is used to split. Variables that split early are generally more important. This is often considered more robust.
+\end{itemize}
+
+\begin{columns}[T, totalwidth=\textwidth]
+  \begin{column}{0.5\textwidth}
+    \centering
+    \includegraphics[width=0.8\linewidth]{appendix_gini_plot.png}
+  \end{column}
+  \begin{column}{0.5\textwidth}
+    \centering
+    \includegraphics[width=0.9\linewidth]{rf_minimal_depth.png}
+  \end{column}
+\end{columns}
+
+
+\begin{itemize} \tiny
+  \item Both metrics agree on the top 2 predictors: \textbf{VIX\_change\_lag} and \textbf{lag1\_return}.
+  \item This consistency gives us high confidence that these are the most powerful and reliable signals in our non-linear model.
+\end{itemize}
+\end{frame}
+
+
+
+
+\begin{frame}
+\frametitle{Appendix: Hyperparameter Tuning Grids (Elastic Net)}
+\footnotesize % <-- Set base font size
+
+\textbf{Elastic Net (GLM) Grid:}
+\begin{itemize}
+    \item \texttt{alpha (Mixing Parameter)}: \{0, 0.1, 0.2, ..., 0.9, 1.0\}
+        \begin{itemize} \scriptsize % <-- Set nested list to scriptsize
+            \item Tests the \textbf{entire spectrum} of regularization.
+            \item \texttt{alpha = 0} is pure Ridge (good for multicollinearity).
+            \item \texttt{alpha = 1} is pure Lasso (good for variable selection).
+            \item In between is the Elastic Net, which balances both. Your optimal $\alpha=0.1$ suggests a model that is 90 percent Ridge and 10 percent Lasso.
+        \end{itemize}
+    
+    \item \texttt{lambda (Penalty Strength)}: 40 log-spaced values from $10^{-4}$ to $10$.
+        \begin{itemize} \scriptsize % <-- Set nested list to scriptsize
+            \item A log-spaced grid is critical because the penalty's effect is not linear.
+            \item This wide range tests models from a standard (un-penalized) GLM (low $\lambda$) up to a null (intercept-only) model (high $\lambda$).
+        \end{itemize}
+\end{itemize}
+\textit{Total combinations tested per CV fold: 11 (alphas) $\times$ 40 (lambdas) = 440}
+
+\vspace{0.5cm}
+\textbf{Insight:}
+\begin{itemize} \scriptsize
+    \item The tuning process is thorough. It selected $\alpha=0.1$, confirming that our data benefits from a Ridge-dominant model to handle multicollinearity, while still using a small amount of Lasso for variable selection.
+\end{itemize}
+
+\end{frame}
+
+
+
+
+\begin{frame}
+\frametitle{Appendix: Hyperparameter Tuning Grids}
+\tiny % <-- Set base font size to footnotesize
+
+\textbf{Random Forest Grid:}
+\begin{itemize}
+    \item \texttt{mtry (vars. per split)}: \{3, 4, 6, 7, 11\}
+        \begin{itemize} \scriptsize % <-- Set nested list to scriptsize
+            \item Based on $p=11$ predictors. Grid extends from the defaults ($\sqrt{p} \approx 3$, $p/3 \approx 4$) up to $p=11$ to find the optimal level of tree de-correlation.
+        \end{itemize}
+    \item \texttt{min.node.size (leaf size)}: \{2, 5, 10, 20\}
+        \begin{itemize} \scriptsize % <-- Set nested list to scriptsize
+            \item Controls tree depth and regularization.
+        \end{itemize}
+    \item \texttt{max.depth}: \{5, 10, 15, 20, Unlimited (NA)\}
+        \begin{itemize} \scriptsize % <-- Set nested list to scriptsize
+            \item Another regularization control on tree complexity.
+        \end{itemize}
+    \item \texttt{sample.fraction}: \{0.6, 0.7, 0.8, 0.9\}
+\end{itemize}
+\textit{Total combinations tested via Time-Series CV: 400}
+
+\vspace{0.4cm}
+
+\textbf{Gradient Boosting (GBM) Grid:}
+\begin{itemize}
+    \item \texttt{n.trees ($M$)}: \{100, 200, 300\}
+        \begin{itemize} \scriptsize % <-- Set nested list to scriptsize
+            \item The number of boosting iterations (weak learners).
+        \end{itemize}
+    \item \texttt{interaction.depth ($J$)}: \{1, 2, 3\}
+        \begin{itemize} \scriptsize % <-- Set nested list to scriptsize
+            \item Tests an \textbf{additive model ($J$=1)} against models with two-way ($J$=2) and three-way ($J$=3) interactions.
+        \end{itemize}
+    \item \texttt{shrinkage ($\nu$)}: \{0.01, 0.1\}
+        \begin{itemize} \scriptsize % <-- Set nested list to scriptsize
+            \item The learning rate. Tests a slow, regularized rate (0.01) vs. a faster, standard rate (0.1).
+        \end{itemize}
+\end{itemize}
+\textit{Total combinations tested via Time-Series CV: 18}
+
+\end{frame}
+
+
+
+\begin{frame}
+\frametitle{Appendix: Strategy Backtest (Strategy and Plot)}
+\tiny % Set base font size to tiny
+
+% --- Text Block ---
+\begin{itemize}
+    \item We can simulate a trading strategy to see if the statistical edge (AUC $>$ 0.75) translates into a practical, usable result.
+    \item This simulation uses the unseen test set and assumes no transaction costs. At the start of each month $t$, use the model's prediction.
+    \item If P(Up) $>$ Tuned Threshold $\Rightarrow$ \textbf{Go Long} S\&P 500 for the month. If P(Up) $<$ Tuned Threshold $\Rightarrow$ \textbf{Go Short} S\&P 500 for the month.
+\end{itemize}
+
+% --- Plot Block ---
+\begin{center}
+    % You can adjust the width as needed. 0.7 might be good.
+    \includegraphics[width=0.7\linewidth]{appendix_backtest_plot.png} 
+\end{center}
+
+\end{frame}
+
+
+
+
+
+
+\begin{frame}
+\frametitle{Appendix: Strategy Backtest (Performance Metrics)}
+\footnotesize
+
+\textbf{Motivation:}
+\begin{itemize}
+    \item We can quantify the visual performance from the backtest plot using standard financial metrics.
+    \item \textbf{Annualized Sharpe Ratio:} The key metric for risk-adjusted return (Return / Volatility). Higher is better.
+    \item \textbf{Maximum Drawdown (MaxDD):} The largest peak-to-trough loss. Measures "pain" or tail risk; smaller is better.
+\end{itemize}
+
+\begin{center}
+    % This is the table generated by the corrected R code
+    \includegraphics[width=0.6\linewidth]{appendix_performance_table.png} 
+\end{center}
+
+\begin{itemize} \scriptsize
+    \item The Random Forest and GBM models generated the highest risk-adjusted returns (Sharpe Ratios), both significantly outperforming the "Buy and Hold" strategy.
+    \item Impressively, all model-based strategies had a \textbf{lower Maximum Drawdown} than "Buy and Hold," suggesting they were successful at mitigating major losses.
+    \item This confirms the models provide not just higher returns, but \textbf{smarter, risk-controlled} returns.
+\end{itemize}
+
+\end{frame}
+
+
 
 %-------------------------------------------------------
 % BIBLIOGRAPHY / REFERENCES SLIDE

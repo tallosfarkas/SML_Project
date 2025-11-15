@@ -902,10 +902,305 @@ plot(gbm_roc_obj, col = "darkorange", main = "ROC Curve - Tuned GBM")
 cat("\nGBM Feature Importance:\n")
 print(summary(gbm_final, plotit = FALSE))
 
+
+
+
+
+# --- APPENDIX SLIDE 1 ---
+# This block calculates all final metrics for the appendix.
+# It ensures all objects like 'enet_pred_prob' are created before being used.
+
+print("Starting Appendix 1 metric calculations...")
+
+# --- 1. Define Epsilon for Log-Loss stability ---
+eps <- 1e-9
+
+# --- 2. Define the TRUE test set target variable (y_true_test) ---
+# This must come from the 'rf_test_df' which was the final hold-out set
+y_true_test <- as.numeric(as.character(rf_test_df$Y))
+print("Loaded y_true_test.")
+
+# --- 3. Get predictions for Elastic Net ---
+# 'final_model' is the name of your final enet model
+enet_pred_prob <- predict(final_model, newx = x_test, type = "response")
+enet_accuracy  <- mean(ifelse(enet_pred_prob > opt_thresh_enet, 1, 0) == y_true_test)
+enet_logloss_test <- -mean(y_true_test * log(enet_pred_prob + eps) + (1 - y_true_test) * log(1 - enet_pred_prob + eps))
+enet_roc_obj    <- roc(y_true_test, as.numeric(enet_pred_prob), quiet = TRUE)
+print("Calculated Elastic Net metrics.")
+
+# --- 4. Get predictions for Random Forest ---
+# 'final_rf' is the name of your final RF model
+rf_pred_prob_tuned <- predict(final_rf, data = rf_test_df)$predictions[, "1"]
+rf_accuracy_tuned  <- mean(ifelse(rf_pred_prob_tuned > opt_thresh_rf, 1, 0) == y_true_test)
+rf_logloss_test_tuned <- -mean(y_true_test * log(rf_pred_prob_tuned + eps) + (1 - y_true_test) * log(1 - rf_pred_prob_tuned + eps))
+rf_roc_obj_tuned    <- roc(y_true_test, rf_pred_prob_tuned, quiet = TRUE)
+print("Calculated Random Forest metrics.")
+
+# --- 5. Get predictions for Gradient Boosting (GBM) ---
+# 'gbm_final' is the name of your final GBM model
+# We must re-create 'test_df_gbm' to ensure it has the numeric target 'Y_num'
+test_df_gbm <- rf_test_df
+test_df_gbm$Y_num <- as.numeric(as.character(test_df_gbm$Y))
+
+gbm_pred_prob <- predict(gbm_final,
+                         newdata = test_df_gbm,
+                         n.trees = best_params_gbm$n.trees,
+                         type = "response")
+gbm_accuracy  <- mean(ifelse(gbm_pred_prob > opt_thresh_gbm, 1, 0) == y_true_test)
+gbm_logloss_test <- -mean(y_true_test * log(gbm_pred_prob + eps) + (1 - y_true_test) * log(1 - gbm_pred_prob + eps))
+gbm_roc_obj   <- roc(y_true_test, gbm_pred_prob, quiet = TRUE)
+print("Calculated GBM metrics.")
+
+# --- 6. NOW calculate Brier Scores (all objects exist) ---
+print("Calculating Brier Scores...")
+brier_scores <- c(
+  ElasticNet = mean((enet_pred_prob - y_true_test)^2),
+  RandomForest = mean((rf_pred_prob_tuned - y_true_test)^2),
+  GBM = mean((gbm_pred_prob - y_true_test)^2)
+)
+
+# --- 7. Combine Log-Loss Scores ---
+log_loss_scores <- c(
+  ElasticNet = enet_logloss_test,
+  RandomForest = rf_logloss_test_tuned,
+  GBM = gbm_logloss_test
+)
+
+# --- 8. Create the final, full summary table ---
+print("Creating full summary table...")
+final_summary_full <- data.frame(
+  Model = c("Elastic Net (Tuned)", "Random Forest (Tuned)", "Gradient Boosting (Tuned)"),
+  Test_AUC = c(auc(enet_roc_obj), auc(rf_roc_obj_tuned), auc(gbm_roc_obj)),
+  Test_Accuracy = c(enet_accuracy, rf_accuracy_tuned, gbm_accuracy),
+  Test_LogLoss = log_loss_scores,
+  Test_Brier = brier_scores
+)
+
+# --- 9. Save the table to a file ---
+library(gt)
+final_summary_full %>%
+  arrange(desc(Test_AUC)) %>%
+  mutate_if(is.numeric, round, 4) %>%
+  gt() %>%
+  tab_header(title = "Full Model Performance Comparison (Test Set)") %>%
+  gtsave("appendix_full_summary_table.png")
+
+print("Full appendix summary table saved as 'appendix_full_summary_table.png'.")
+print("--- Appendix 1 Chunk Complete ---")
+
+
+
+
+
+
+
+
+
+
+
+##### Appendix Slide 2: Partial Dependence Plots for GBM ####
+# This uses the gbm_final object
+
+# Save the PDP for the most important variable: VIX_change_lag
+png("appendix_pdp_vix.png", width = 500, height = 400, res = 100)
+par(mar = c(5.1, 4.1, 4.1, 2.1)) # Reset margins
+gbm::plot.gbm(
+  gbm_final,
+  i.var = "VIX_change_lag",
+  n.trees = best_params_gbm$n.trees,
+  type = "response", # Show effect on probability
+  main = "PDP: VIX Change",
+  ylab = "P(UP_DOWN = Up)"
+)
+dev.off()
+
+# Save the PDP for the second most important: lag3_return
+png("appendix_pdp_lag3.png", width = 500, height = 400, res = 100)
+par(mar = c(5.1, 4.1, 4.1, 2.1)) # Reset margins
+gbm::plot.gbm(
+  gbm_final,
+  i.var = "lag3_return",
+  n.trees = best_params_gbm$n.trees,
+  type = "response",
+  main = "PDP: 3-Month Lagged Return",
+  ylab = "P(UP_DOWN = Up)"
+)
+dev.off()
+
+
+
+
+# --- [CORRECTED CHUNK FOR APPENDIX SLIDE 3] ---
+# Fixes the ggplot() syntax error
+
+# We already have the 'final_rf' object
+gini_importance_df <- data.frame(
+  Variable = names(final_rf$variable.importance),
+  GiniImportance = final_rf$variable.importance
+) %>%
+  dplyr::arrange(desc(GiniImportance)) # Using dplyr::arrange for clarity
+
+# Create the Gini plot
+gini_plot <- ggplot(
+  gini_importance_df %>% dplyr::top_n(10, GiniImportance),
+  aes(x = reorder(Variable, GiniImportance), y = GiniImportance)
+) + # <-- The parenthesis for ggplot() closes here
+  geom_col(fill = "darkgreen") +
+  coord_flip() +
+  labs(title = "RF Importance: Gini Impurity", x = "Variable", y = "Mean Decrease in Gini") +
+  theme_minimal()
+
+# Save the plot
+ggsave("appendix_gini_plot.png", plot = gini_plot, width = 6, height = 5, dpi = 100)
+
+print("Appendix 3 Gini Importance plot saved as 'appendix_gini_plot.png'.")
+
+
+
+# --- [APPENDIX SLIDE 4: BACKTEST] ---
+print("Starting backtest...")
+
+# 1. Re-create the dataset, but KEEP the 'return' column
+backtest_data_df <- macro_df %>%
+  left_join(sp500_df, by = "year_month") %>%
+  left_join(vix_df,   by = "year_month") %>%
+  left_join(dnsi_df,  by = "year_month") %>%
+  select(-price, -price_lag1, -volume, -volume_change) %>% # <-- KEPT 'return'
+  tidyr::drop_na()
+
+# 2. Get the dates and actual returns for the test period
+# (This split point MUST match the one used for rf_test_df)
+n_backtest <- nrow(backtest_data_df)
+split_point_backtest <- floor(0.7 * n_backtest)
+
+test_set_data <- backtest_data_df[(split_point_backtest + 1):n_backtest, ]
+
+# 3. Create the trading signals (1 = Long, -1 = Short)
+# These signals are generated at time t, to be applied to the return at time t
+test_set_data$signal_enet <- ifelse(enet_pred_prob > opt_thresh_enet, 1, -1)
+test_set_data$signal_rf   <- ifelse(rf_pred_prob_tuned > opt_thresh_rf, 1, -1)
+test_set_data$signal_gbm  <- ifelse(gbm_pred_prob > opt_thresh_gbm, 1, -1)
+
+# 4. Calculate the strategy returns
+test_set_data <- test_set_data %>%
+  mutate(
+    BuyAndHold = return, # The S&P 500 return
+    ElasticNet = signal_enet * return,
+    RandomForest = signal_rf * return,
+    GBM = signal_gbm * return
+  )
+
+# 5. Calculate cumulative wealth for plotting
+backtest_results_long <- test_set_data %>%
+  select(year_month, BuyAndHold, ElasticNet, RandomForest, GBM) %>%
+  tidyr::pivot_longer(
+    cols = -year_month,
+    names_to = "Strategy",
+    values_to = "Monthly_Return"
+  ) %>%
+  group_by(Strategy) %>%
+  # Calculate cumulative wealth (compounded return)
+  mutate(Cumulative_Wealth = cumprod(1 + Monthly_Return)) %>%
+  ungroup()
+
+# 6. Plot the cumulative wealth
+backtest_plot <- ggplot(
+  backtest_results_long,
+  aes(x = year_month, y = Cumulative_Wealth, color = Strategy)
+) +
+  geom_line(linewidth = 1) +
+  labs(
+    title = "Backtest: Model Strategy vs. Buy & Hold (Test Set)",
+    x = "Date",
+    y = "Cumulative Wealth (1 = Start)"
+  ) +
+  scale_color_manual(values = c(
+    "BuyAndHold" = "black",
+    "ElasticNet" = "blue",
+    "RandomForest" = "darkgreen",
+    "GBM" = "darkorange"
+  )) +
+  theme_minimal() +
+  theme(legend.position = "top")
+
+# 7. Save the plot
+ggsave("appendix_backtest_plot.png", plot = backtest_plot, width = 9, height = 5, dpi = 100)
+
+print("Backtest plot saved as 'appendix_backtest_plot.png'.")
+
+
+
+# --- [RUN THIS CORRECTED CHUNK FOR APPENDIX SLIDE 5: METRICS] ---
+print("Starting backtest performance metric calculation...")
+
+# 1. Load necessary libraries
+library(PerformanceAnalytics)
+library(xts)
+library(gt)
+library(dplyr)
+library(tibble)
+
+# 2. Get the returns data from the previous backtest script
+returns_for_pa <- test_set_data %>%
+  select(year_month, BuyAndHold, ElasticNet, RandomForest, GBM)
+
+# 3. Convert to XTS object
+returns_xts <- xts(
+  returns_for_pa[, -1], 
+  order.by = returns_for_pa$year_month
+)
+
+# 4. Calculate the annualized returns table
+perf_table <- table.AnnualizedReturns(
+  returns_xts,
+  scale = 12,
+  geometric = FALSE 
+)
+
+# 5. --- [FIX] --- Calculate Max Drawdown separately
+max_dd <- maxDrawdown(returns_xts)
+
+# 6. --- [FIX] --- Combine the metrics into one table
+# We add Max Drawdown as a new row to the original table
+perf_table_combined <- rbind(perf_table, "Maximum Drawdown" = coredata(max_dd))
+
+# scale from decimals to percentages, except sharpe ratio
+perf_table_combined[1:2, ] <- perf_table_combined[1:2, ] * 100
+# scale max drawdown to percentage
+perf_table_combined["Maximum Drawdown", ] <- perf_table_combined["Maximum Drawdown", ] * 100
+
+# 7. --- [NOW THIS WORKS] --- Clean, format, and save the table
+perf_table_gt <- perf_table_combined %>%
+  t() %>% # Transpose so strategies are rows
+  as.data.frame() %>%
+  rownames_to_column("Strategy") %>%
+  select( # Select only the key metrics you asked for
+    Strategy,
+    `Annualized Return`,
+    `Annualized Std Dev`,
+    `Annualized Sharpe (Rf=0%)`, # This is the Sharpe Ratio
+    `Maximum Drawdown`            # This column now exists
+  ) %>%
+  mutate_if(is.numeric, round, 3) %>% # Round to 3 decimal places
+  gt() %>%
+  tab_header(title = "Strategy Performance Metrics (Test Set)") %>%
+  cols_label(
+    `Annualized Return` = "Annualized Return",
+    `Annualized Std Dev` = "Annualized Volatility",
+    `Annualized Sharpe (Rf=0%)` = "Annualized Sharpe",
+    `Maximum Drawdown` = "Max. Drawdown"
+  )
+
+# 8. Save the final table
+gtsave(perf_table_gt, "appendix_performance_table.png")
+
+print("Performance metrics table saved as 'appendix_performance_table.png'.")
+
+
 ############################################################################### divider ###
 ############################################################################### divider ###
 
-################ PLOTS & FINAL SUMMARY #############################
+#### PLOTS & FINAL SUMMARY #############################
 
 # --- 1. Create Final Objects for Comparison ---
 

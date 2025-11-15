@@ -1,0 +1,7 @@
+\beamer@sectionintoc {1}{Introduction and Data}{3}{0}{1}
+\beamer@sectionintoc {2}{Methodology}{5}{0}{2}
+\beamer@sectionintoc {3}{Model Results}{9}{0}{3}
+\beamer@subsectionintoc {3}{1}{Elastic Net}{9}{0}{3}
+\beamer@subsectionintoc {3}{2}{Random Forest}{12}{0}{3}
+\beamer@subsectionintoc {3}{3}{Gradient Boosting Machine}{14}{0}{3}
+\beamer@sectionintoc {4}{Conclusion}{16}{0}{4}

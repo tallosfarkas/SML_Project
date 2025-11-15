@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.28 (TeX Live 2025) (preloaded format=pdflatex 2025.11.9)  14 NOV 2025 16:01
+This is pdfTeX, Version 3.141592653-2.6-1.40.28 (TeX Live 2025) (preloaded format=pdflatex 2025.11.9)  15 NOV 2025 20:12
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -709,23 +709,23 @@ Package caption Info: End \AtBeginDocument code.
 ] [3
 
 ]
-LaTeX Font Info:    Trying to load font information for U+msa on input line 126.
+LaTeX Font Info:    Trying to load font information for U+msa on input line 128.
  (/Users/farkastallos/Library/TinyTeX/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 126.
+LaTeX Font Info:    Trying to load font information for U+msb on input line 128.
  (/Users/farkastallos/Library/TinyTeX/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 ) [4
 
 ]
-<pair_plot.png, id=65, 867.24pt x 867.24pt>
+<pair_plot.png, id=111, 867.24pt x 867.24pt>
 File: pair_plot.png Graphic file (type png)
 <use pair_plot.png>
-Package pdftex.def Info: pair_plot.png  used on input line 160.
+Package pdftex.def Info: pair_plot.png  used on input line 165.
 (pdftex.def)             Requested size: 195.00348pt x 195.00148pt.
 
-Overfull \vbox (3.0194pt too high) detected at line 160
+Overfull \vbox (3.0194pt too high) detected at line 165
  []
 
 [5
@@ -733,25 +733,25 @@ Overfull \vbox (3.0194pt too high) detected at line 160
  <./pair_plot.png>] [6
 
 ]
-Overfull \vbox (3.5789pt too high) detected at line 218
+Overfull \vbox (3.5789pt too high) detected at line 223
  []
 
 [7
 
 ]
-<imbalance_plot.png, id=97, 433.62pt x 433.62pt>
+<imbalance_plot.png, id=142, 433.62pt x 433.62pt>
 File: imbalance_plot.png Graphic file (type png)
 <use imbalance_plot.png>
-Package pdftex.def Info: imbalance_plot.png  used on input line 263.
+Package pdftex.def Info: imbalance_plot.png  used on input line 268.
 (pdftex.def)             Requested size: 146.25261pt x 146.25111pt.
 
-Overfull \vbox (3.49307pt too high) detected at line 263
+Overfull \vbox (3.49307pt too high) detected at line 268
  []
 
 [8
 
  <./imbalance_plot.png>]
-Overfull \vbox (6.98444pt too high) detected at line 299
+Overfull \vbox (6.98444pt too high) detected at line 307
  []
 
 [9
@@ -759,18 +759,18 @@ Overfull \vbox (6.98444pt too high) detected at line 299
 ] [10
 
 ]
-<enet_coeffs.png, id=126, 505.89pt x 433.62pt>
+<enet_coeffs.png, id=170, 505.89pt x 433.62pt>
 File: enet_coeffs.png Graphic file (type png)
 <use enet_coeffs.png>
-Package pdftex.def Info: enet_coeffs.png  used on input line 382.
+Package pdftex.def Info: enet_coeffs.png  used on input line 390.
 (pdftex.def)             Requested size: 169.00555pt x 144.86165pt.
-<roc_enet.png, id=127, 803.0pt x 602.25pt>
+<roc_enet.png, id=171, 803.0pt x 602.25pt>
 File: roc_enet.png Graphic file (type png)
 <use roc_enet.png>
-Package pdftex.def Info: roc_enet.png  used on input line 382.
+Package pdftex.def Info: roc_enet.png  used on input line 390.
 (pdftex.def)             Requested size: 169.00389pt x 126.7519pt.
 
-Overfull \hbox (8.66873pt too wide) detected at line 382
+Overfull \hbox (8.66873pt too wide) detected at line 390
 [][][][][][][][][][][] [][][][][][][]
  []
 
@@ -779,18 +779,18 @@ Overfull \hbox (8.66873pt too wide) detected at line 382
  <./enet_coeffs.png> <./roc_enet.png>] [12
 
 ]
-<rf_minimal_depth.png, id=144, 1349.04pt x 963.6pt>
+<rf_minimal_depth.png, id=187, 1349.04pt x 963.6pt>
 File: rf_minimal_depth.png Graphic file (type png)
 <use rf_minimal_depth.png>
-Package pdftex.def Info: rf_minimal_depth.png  used on input line 493.
+Package pdftex.def Info: rf_minimal_depth.png  used on input line 502.
 (pdftex.def)             Requested size: 169.00389pt x 120.71436pt.
-<roc_rf.png, id=145, 803.0pt x 602.25pt>
+<roc_rf.png, id=188, 803.0pt x 602.25pt>
 File: roc_rf.png Graphic file (type png)
 <use roc_rf.png>
-Package pdftex.def Info: roc_rf.png  used on input line 493.
+Package pdftex.def Info: roc_rf.png  used on input line 502.
 (pdftex.def)             Requested size: 156.00337pt x 117.00177pt.
 
-Overfull \vbox (4.26003pt too high) detected at line 493
+Overfull \vbox (4.26003pt too high) detected at line 502
  []
 
 [13
@@ -798,26 +798,26 @@ Overfull \vbox (4.26003pt too high) detected at line 493
  <./rf_minimal_depth.png> <./roc_rf.png>] [14
 
 ]
-<gbm_var_imp_plot.png, id=163, 578.16pt x 361.35pt>
+<gbm_var_imp_plot.png, id=206, 578.16pt x 361.35pt>
 File: gbm_var_imp_plot.png Graphic file (type png)
 <use gbm_var_imp_plot.png>
-Package pdftex.def Info: gbm_var_imp_plot.png  used on input line 589.
+Package pdftex.def Info: gbm_var_imp_plot.png  used on input line 602.
 (pdftex.def)             Requested size: 173.33826pt x 108.33415pt.
  [15
 
  <./gbm_var_imp_plot.png>]
-<combined_roc_plot.png, id=173, 803.0pt x 702.625pt>
+<combined_roc_plot.png, id=216, 803.0pt x 702.625pt>
 File: combined_roc_plot.png Graphic file (type png)
 <use combined_roc_plot.png>
-Package pdftex.def Info: combined_roc_plot.png  used on input line 632.
+Package pdftex.def Info: combined_roc_plot.png  used on input line 645.
 (pdftex.def)             Requested size: 216.67201pt x 189.58263pt.
-<final_summary_table.png, id=174, 1045.9075pt x 361.35pt>
+<final_summary_table.png, id=217, 1045.9075pt x 361.35pt>
 File: final_summary_table.png Graphic file (type png)
 <use final_summary_table.png>
-Package pdftex.def Info: final_summary_table.png  used on input line 632.
+Package pdftex.def Info: final_summary_table.png  used on input line 645.
 (pdftex.def)             Requested size: 195.00348pt x 67.3725pt.
 
-Overfull \vbox (21.55054pt too high) detected at line 632
+Overfull \vbox (21.55054pt too high) detected at line 645
  []
 
 [16
@@ -826,9 +826,73 @@ Overfull \vbox (21.55054pt too high) detected at line 632
 
 ] [18
 
-] [19
+]
+<appendix_full_summary_table.png, id=239, 1214.5375pt x 361.35pt>
+File: appendix_full_summary_table.png Graphic file (type png)
+<use appendix_full_summary_table.png>
+Package pdftex.def Info: appendix_full_summary_table.png  used on input line 735.
+(pdftex.def)             Requested size: 346.67653pt x 103.1402pt.
 
-] [20
+Overfull \vbox (63.02748pt too high) detected at line 735
+ []
+
+[19
+
+ <./appendix_full_summary_table.png (PNG copy)>]
+<appendix_pdp_vix.png, id=248, 501.875pt x 401.5pt>
+File: appendix_pdp_vix.png Graphic file (type png)
+<use appendix_pdp_vix.png>
+Package pdftex.def Info: appendix_pdp_vix.png  used on input line 777.
+(pdftex.def)             Requested size: 173.33826pt x 138.6708pt.
+<appendix_pdp_lag3.png, id=249, 501.875pt x 401.5pt>
+File: appendix_pdp_lag3.png Graphic file (type png)
+<use appendix_pdp_lag3.png>
+Package pdftex.def Info: appendix_pdp_lag3.png  used on input line 777.
+(pdftex.def)             Requested size: 173.33826pt x 138.6708pt.
+ [20
+
+ <./appendix_pdp_vix.png> <./appendix_pdp_lag3.png>]
+<appendix_gini_plot.png, id=259, 433.62pt x 361.35pt>
+File: appendix_gini_plot.png Graphic file (type png)
+<use appendix_gini_plot.png>
+Package pdftex.def Info: appendix_gini_plot.png  used on input line 809.
+(pdftex.def)             Requested size: 173.33826pt x 144.44922pt.
+File: rf_minimal_depth.png Graphic file (type png)
+<use rf_minimal_depth.png>
+Package pdftex.def Info: rf_minimal_depth.png  used on input line 809.
+(pdftex.def)             Requested size: 195.00348pt x 139.28467pt.
+ [21
+
+ <./appendix_gini_plot.png>]
+LaTeX Font Info:    Trying to load font information for OMS+cmss on input line 842.
+LaTeX Font Info:    No file OMScmss.fd. on input line 842.
+
+
+LaTeX Font Warning: Font shape `OMS/cmss/m/n' undefined
+(Font)              using `OMS/cmsy/m/n' instead
+(Font)              for symbol `textbraceleft' on input line 842.
+
+[22
+
+] [23
+
+]
+<appendix_backtest_plot.png, id=282, 650.43pt x 361.35pt>
+File: appendix_backtest_plot.png Graphic file (type png)
+<use appendix_backtest_plot.png>
+Package pdftex.def Info: appendix_backtest_plot.png  used on input line 909.
+(pdftex.def)             Requested size: 303.3395pt x 168.52225pt.
+ [24
+
+ <./appendix_backtest_plot.png>]
+<appendix_performance_table.png, id=290, 1393.205pt x 431.6125pt>
+File: appendix_performance_table.png Graphic file (type png)
+<use appendix_performance_table.png>
+Package pdftex.def Info: appendix_performance_table.png  used on input line 938.
+(pdftex.def)             Requested size: 260.00905pt x 80.54515pt.
+ [25
+
+ <./appendix_performance_table.png (PNG copy)>] [26
 
  </Users/farkastallos/Library/TinyTeX/texmf-dist/tex/latex/beamer/beamericonarticle.pdf>]
 \tf@nav=\write6
@@ -845,22 +909,26 @@ Overfull \vbox (21.55054pt too high) detected at line 632
 LaTeX2e <2025-11-01>
 L3 programming layer <2025-10-24>
  ***********
+
+
+LaTeX Font Warning: Some font shapes were not available, defaults substituted.
+
 Package rerunfilecheck Info: File `SML_Presentation_TEX.out' has not changed.
-(rerunfilecheck)             Checksum: D41D8CD98F00B204E9800998ECF8427E;0.
+(rerunfilecheck)             Checksum: 23351C81AA752A2A53B98B39E7F561A0;921.
  ) 
 Here is how much of TeX's memory you used:
- 23175 strings out of 469519
- 456035 string characters out of 5468527
- 822004 words of memory out of 5000000
- 51314 multiletter control sequences out of 15000+600000
- 642916 words of font info for 96 fonts, out of 8000000 for 9000
+ 23332 strings out of 469519
+ 459449 string characters out of 5468527
+ 822021 words of memory out of 5000000
+ 51451 multiletter control sequences out of 15000+600000
+ 643084 words of font info for 97 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 101i,15n,107p,478b,744s stack positions out of 10000i,1000n,20000p,200000b,200000s
-</Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cmextra/cmex9.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmss10.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmss12.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmss8.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmss9.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmssbx10.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmssi10.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmssi8.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmssi9.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt8.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt9.pfb>
-Output written on SML_Presentation_TEX.pdf (20 pages, 1664858 bytes).
+ 101i,15n,107p,478b,746s stack positions out of 10000i,1000n,20000p,200000b,200000s
+</Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cmextra/cmex9.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmss10.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmss12.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmss8.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmss9.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmssbx10.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmssi10.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmssi8.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmssi9.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt8.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt9.pfb>
+Output written on SML_Presentation_TEX.pdf (26 pages, 1938464 bytes).
 PDF statistics:
- 325 PDF objects out of 1000 (max. 8388607)
- 206 compressed objects within 3 object streams
- 48 named destinations out of 1000 (max. 500000)
- 136 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 427 PDF objects out of 1000 (max. 8388607)
+ 285 compressed objects within 3 object streams
+ 68 named destinations out of 1000 (max. 500000)
+ 236 words of extra memory for PDF output out of 10000 (max. 10000000)
 
