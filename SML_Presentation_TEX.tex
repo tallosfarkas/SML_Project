@@ -508,7 +508,7 @@ Predicted 1   & 15       & 63       \\
 %-------------------------------------------------------
 \begin{frame}{Gradient Boosting Machine (GBM)}
 % --- FONT CHANGED ---
-\footnotesize 
+\footnotesize
 \textbf{Model Intuition:}
 \begin{itemize}
     \item A powerful \textbf{boosting} ensemble method, as discussed in class.
@@ -524,9 +524,9 @@ Predicted 1   & 15       & 63       \\
 \textbf{Tuned Hyperparameters (from Time-Series CV):}
 \begin{itemize}
      \item \texttt{shrinkage = 0.01} (The learning rate $\nu$): A small value provides \textbf{regularization}, forcing the model to learn "slowly".  This is ideal for noisy financial data, as it prevents overfitting and generally gives better results.
-        
+
     \item \texttt{n.trees = 200} (The number of iterations $M$): This is the optimal stopping point found by CV.  It is directly balanced with the small shrinkage; a slow learner ($\nu=0.01$) requires more iterations ($M=200$) to fit the signal.
-        
+
     \item \texttt{interaction.depth = 1} (Tree size $J$): This was a key finding.  Our CV selected a "stump" (a tree with one split), which restricts the entire GBM to a purely \textbf{additive model}. This suggests the predictive signal in our data is best captured by main effects, not by complex interactions.
 \end{itemize}
 % --- [END OF MODIFIED SECTION] ---
@@ -540,7 +540,7 @@ Predicted 1   & 15       & 63       \\
 % Left Column: Performance
 \begin{column}{0.5\textwidth}
 % --- FONT CHANGED ---
-\footnotesize 
+\footnotesize
 \textbf{Predictive performance (test set):}
 % --- FONT CHANGED ---
 \scriptsize{
@@ -628,7 +628,7 @@ Predicted 1   & 11       & 54       \\
         % This is the table you provided
         \includegraphics[width=0.9\textwidth]{final_summary_table.png}
     }
-    
+
     % --- [FONT CHANGED] --- % Add a little space
     \footnotesize\textbf{Final performance metrics on the hold-out test set}
     \begin{footnotesize} % Start even smaller font for the list
@@ -673,7 +673,7 @@ Predicted 1   & 11       & 54       \\
 \textbf{Implications \& Future Work:}
 \begin{itemize} \tiny % Set font size for this itemize
     \item \textbf{Can we predict the market?} Our results show that S\&P 500 monthly direction is \textbf{not} a random walk. There is a persistent, predictable statistical edge (AUC greater than 0.75) that our models can capture.
-    
+
     \item \textbf{A "Long/Short" Strategy:} This edge could form the basis of a simple allocation strategy:
         \begin{itemize} \tiny % Can make this inner list even smaller if needed
             \item Go \textbf{Long} S\&P 500 when our model's probability > tuned threshold.
@@ -695,9 +695,9 @@ Predicted 1   & 11       & 54       \\
 \begin{center}
     % You can make the "Thank you" text larger
     \Huge{\textbf{Thank you!}}
-    
+
     \vspace{1cm} % Adds some space
-    
+
     \Large{Questions \& Discussion}
 \end{center}
 \vfill % Balances the vertical centering
@@ -756,7 +756,7 @@ Predicted 1   & 11       & 54       \\
     \centering % <-- REPLACED \begin{center}
     \includegraphics[width=0.8\textwidth]{appendix_pdp_vix.png}
     % <-- REMOVED \end{center}
-    
+
     \vspace{-0.3cm} % <-- Optional: Add small negative space to pull text up
     \tiny
     \textbf{Insight:} The probability of an "Up" month is highest (around 0.7) when the VIX has a small \textit{negative} change (slight calming). A large VIX spike (large positive change) dramatically \textit{decreases} the probability of an "Up" month.
@@ -767,7 +767,7 @@ Predicted 1   & 11       & 54       \\
     \centering % <-- REPLACED \begin{center}
     \includegraphics[width=0.8\textwidth]{appendix_pdp_lag3.png}
     % <-- REMOVED \end{center}
-    
+
     \vspace{-0.3cm} % <-- Optional: Add small negative space to pull text up
     \tiny
     \textbf{Insight:} The model found a momentum effect. The probability of an "Up" month increases as the 3-month lagged return increases from negative to positive, consistent with financial theory.
@@ -824,7 +824,7 @@ Predicted 1   & 11       & 54       \\
             \item \texttt{alpha = 1} is pure Lasso (good for variable selection).
             \item In between is the Elastic Net, which balances both. Your optimal $\alpha=0.1$ suggests a model that is 90 percent Ridge and 10 percent Lasso.
         \end{itemize}
-    
+
     \item \texttt{lambda (Penalty Strength)}: 40 log-spaced values from $10^{-4}$ to $10$.
         \begin{itemize} \scriptsize % <-- Set nested list to scriptsize
             \item A log-spaced grid is critical because the penalty's effect is not linear.
@@ -903,7 +903,7 @@ Predicted 1   & 11       & 54       \\
 % --- Plot Block ---
 \begin{center}
     % You can adjust the width as needed. 0.7 might be good.
-    \includegraphics[width=0.7\linewidth]{appendix_backtest_plot.png} 
+    \includegraphics[width=0.7\linewidth]{appendix_backtest_plot.png}
 \end{center}
 
 \end{frame}
@@ -926,7 +926,7 @@ Predicted 1   & 11       & 54       \\
 
 \begin{center}
     % This is the table generated by the corrected R code
-    \includegraphics[width=0.6\linewidth]{appendix_performance_table.png} 
+    \includegraphics[width=0.6\linewidth]{appendix_performance_table.png}
 \end{center}
 
 \begin{itemize} \scriptsize
@@ -969,7 +969,7 @@ Predicted 1   & 11       & 54       \\
   Yahoo Finance.
   \textit{S\&P 500 (\^GSPC) \& CBOE VIX (\^VIX) Data}.
   Retrieved 2025.
-  
+
   % --- [FIXED] Escaped all the '&' symbols ---
   \bibitem{glmnet}
   Friedman, J., Hastie, T., \& Tibshirani, R. (2010).
@@ -980,7 +980,7 @@ Predicted 1   & 11       & 54       \\
   Wright, M. N. \& Ziegler, A. (2017).
   ranger: A Fast Implementation of Random Forests...
   \textit{Journal of Statistical Software, 77}(1), 1-17.
-  
+
   \bibitem{gbm}
   Ridgeway, G. (2007).
   Generalized Boosted Models: A guide to the gbm package.
