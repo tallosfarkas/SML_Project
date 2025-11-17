@@ -4,4 +4,5 @@
 \beamer@subsectionintoc {3}{1}{Elastic Net}{9}{0}{3}
 \beamer@subsectionintoc {3}{2}{Random Forest}{12}{0}{3}
 \beamer@subsectionintoc {3}{3}{Gradient Boosting Machine}{14}{0}{3}
-\beamer@sectionintoc {4}{Conclusion}{16}{0}{4}
+\beamer@sectionintoc {4}{Trading Strategy}{16}{0}{4}
+\beamer@sectionintoc {5}{Conclusion}{18}{0}{5}
