@@ -1,9 +1,9 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.28 (TeX Live 2025) (preloaded format=pdflatex 2025.11.9)  17 NOV 2025 22:04
+This is pdfTeX, Version 3.141592653-2.6-1.40.28 (TeX Live 2025) (preloaded format=pdflatex 2025.11.9)  17 NOV 2025 22:58
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
-**SML_Final_Presentation.tex
-(./SML_Final_Presentation.tex
+**SML_Final_Presentation_CW_FT.tex
+(./SML_Final_Presentation_CW_FT.tex
 LaTeX2e <2025-11-01>
 L3 programming layer <2025-10-24>
 (/Users/farkastallos/Library/TinyTeX/texmf-dist/tex/latex/beamer/beamer.cls
@@ -578,8 +578,8 @@ Package caption Info: Hyperref support is turned off
 ) (/Users/farkastallos/Library/TinyTeX/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
 File: l3backend-pdftex.def 2025-10-09 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count364
-) (./SML_Final_Presentation.aux)
-\openout1 = `SML_Final_Presentation.aux'.
+) (./SML_Final_Presentation_CW_FT.aux)
+\openout1 = `SML_Final_Presentation_CW_FT.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 77.
 LaTeX Font Info:    ... okay on input line 77.
@@ -641,9 +641,9 @@ Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 48
 File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Live
 ))
 Package hyperref Info: Link coloring OFF on input line 77.
- (./SML_Final_Presentation.out) (./SML_Final_Presentation.out)
+ (./SML_Final_Presentation_CW_FT.out) (./SML_Final_Presentation_CW_FT.out)
 \@outlinefile=\write5
-\openout5 = `SML_Final_Presentation.out'.
+\openout5 = `SML_Final_Presentation_CW_FT.out'.
 
 LaTeX Font Info:    Overwriting symbol font `operators' in version `normal'
 (Font)                  OT1/cmr/m/n --> OT1/cmss/m/n on input line 77.
@@ -702,9 +702,9 @@ Dictionary: translator-theorem-dictionary, Language: English
 )
 Package caption Info: Begin \AtBeginDocument code.
 Package caption Info: End \AtBeginDocument code.
- (./SML_Final_Presentation.nav) [1
+ (./SML_Final_Presentation_CW_FT.nav) [1
 
-{/Users/farkastallos/Library/TinyTeX/texmf-var/fonts/map/pdftex/updmap/pdftex.map}] (./SML_Final_Presentation.toc) [2
+{/Users/farkastallos/Library/TinyTeX/texmf-var/fonts/map/pdftex/updmap/pdftex.map}] (./SML_Final_Presentation_CW_FT.toc) [2
 
 ] [3
 
@@ -805,13 +805,17 @@ File: gbm_var_imp_plot.png Graphic file (type png)
 <use gbm_var_imp_plot.png>
 Package pdftex.def Info: gbm_var_imp_plot.png  used on input line 641.
 (pdftex.def)             Requested size: 173.33826pt x 108.33415pt.
- [16
+
+Overfull \vbox (0.50206pt too high) detected at line 641
+ []
+
+[16
 
  <./gbm_var_imp_plot.png>]
 <appendix_backtest_plot.png, id=229, 650.43pt x 361.35pt>
 File: appendix_backtest_plot.png Graphic file (type png)
 <use appendix_backtest_plot.png>
-Package pdftex.def Info: appendix_backtest_plot.png  used on input line 665.
+Package pdftex.def Info: appendix_backtest_plot.png  used on input line 664.
 (pdftex.def)             Requested size: 303.3395pt x 168.52225pt.
  [17
 
@@ -819,7 +823,7 @@ Package pdftex.def Info: appendix_backtest_plot.png  used on input line 665.
 <appendix_performance_table.png, id=237, 1393.205pt x 431.6125pt>
 File: appendix_performance_table.png Graphic file (type png)
 <use appendix_performance_table.png>
-Package pdftex.def Info: appendix_performance_table.png  used on input line 694.
+Package pdftex.def Info: appendix_performance_table.png  used on input line 693.
 (pdftex.def)             Requested size: 260.00905pt x 80.54515pt.
  [18
 
@@ -827,7 +831,7 @@ Package pdftex.def Info: appendix_performance_table.png  used on input line 694.
 <appendix_full_summary_table.png, id=245, 1214.5375pt x 361.35pt>
 File: appendix_full_summary_table.png Graphic file (type png)
 <use appendix_full_summary_table.png>
-Package pdftex.def Info: appendix_full_summary_table.png  used on input line 728.
+Package pdftex.def Info: appendix_full_summary_table.png  used on input line 727.
 (pdftex.def)             Requested size: 216.67201pt x 64.46124pt.
  [19
 
@@ -835,15 +839,15 @@ Package pdftex.def Info: appendix_full_summary_table.png  used on input line 728
 <combined_roc_plot.png, id=253, 803.0pt x 702.625pt>
 File: combined_roc_plot.png Graphic file (type png)
 <use combined_roc_plot.png>
-Package pdftex.def Info: combined_roc_plot.png  used on input line 771.
+Package pdftex.def Info: combined_roc_plot.png  used on input line 770.
 (pdftex.def)             Requested size: 216.67201pt x 189.58263pt.
 <final_summary_table.png, id=254, 1045.9075pt x 361.35pt>
 File: final_summary_table.png Graphic file (type png)
 <use final_summary_table.png>
-Package pdftex.def Info: final_summary_table.png  used on input line 771.
+Package pdftex.def Info: final_summary_table.png  used on input line 770.
 (pdftex.def)             Requested size: 195.00348pt x 67.3725pt.
 
-Overfull \vbox (21.55054pt too high) detected at line 771
+Overfull \vbox (21.55054pt too high) detected at line 770
  []
 
 [20
@@ -855,10 +859,10 @@ Overfull \vbox (21.55054pt too high) detected at line 771
 ]
 File: appendix_full_summary_table.png Graphic file (type png)
 <use appendix_full_summary_table.png>
-Package pdftex.def Info: appendix_full_summary_table.png  used on input line 864.
+Package pdftex.def Info: appendix_full_summary_table.png  used on input line 863.
 (pdftex.def)             Requested size: 346.67653pt x 103.1402pt.
 
-Overfull \vbox (63.02748pt too high) detected at line 864
+Overfull \vbox (63.02748pt too high) detected at line 863
  []
 
 [23
@@ -867,10 +871,10 @@ Overfull \vbox (63.02748pt too high) detected at line 864
 <appendix_rf_interactions.png, id=284, 1349.04pt x 963.6pt>
 File: appendix_rf_interactions.png Graphic file (type png)
 <use appendix_rf_interactions.png>
-Package pdftex.def Info: appendix_rf_interactions.png  used on input line 891.
+Package pdftex.def Info: appendix_rf_interactions.png  used on input line 890.
 (pdftex.def)             Requested size: 216.67201pt x 154.75258pt.
 
-Overfull \vbox (2.35379pt too high) detected at line 891
+Overfull \vbox (2.35379pt too high) detected at line 890
  []
 
 [24
@@ -879,12 +883,12 @@ Overfull \vbox (2.35379pt too high) detected at line 891
 <appendix_pdp_vix.png, id=293, 501.875pt x 401.5pt>
 File: appendix_pdp_vix.png Graphic file (type png)
 <use appendix_pdp_vix.png>
-Package pdftex.def Info: appendix_pdp_vix.png  used on input line 934.
+Package pdftex.def Info: appendix_pdp_vix.png  used on input line 933.
 (pdftex.def)             Requested size: 173.33826pt x 138.6708pt.
 <appendix_pdp_lag3.png, id=294, 501.875pt x 401.5pt>
 File: appendix_pdp_lag3.png Graphic file (type png)
 <use appendix_pdp_lag3.png>
-Package pdftex.def Info: appendix_pdp_lag3.png  used on input line 934.
+Package pdftex.def Info: appendix_pdp_lag3.png  used on input line 933.
 (pdftex.def)             Requested size: 173.33826pt x 138.6708pt.
  [25
 
@@ -892,22 +896,22 @@ Package pdftex.def Info: appendix_pdp_lag3.png  used on input line 934.
 <appendix_gini_plot.png, id=305, 433.62pt x 361.35pt>
 File: appendix_gini_plot.png Graphic file (type png)
 <use appendix_gini_plot.png>
-Package pdftex.def Info: appendix_gini_plot.png  used on input line 966.
+Package pdftex.def Info: appendix_gini_plot.png  used on input line 965.
 (pdftex.def)             Requested size: 173.33826pt x 144.44922pt.
 File: rf_minimal_depth.png Graphic file (type png)
 <use rf_minimal_depth.png>
-Package pdftex.def Info: rf_minimal_depth.png  used on input line 966.
+Package pdftex.def Info: rf_minimal_depth.png  used on input line 965.
 (pdftex.def)             Requested size: 195.00348pt x 139.28467pt.
  [26
 
  <./appendix_gini_plot.png>]
-LaTeX Font Info:    Trying to load font information for OMS+cmss on input line 999.
-LaTeX Font Info:    No file OMScmss.fd. on input line 999.
+LaTeX Font Info:    Trying to load font information for OMS+cmss on input line 998.
+LaTeX Font Info:    No file OMScmss.fd. on input line 998.
 
 
 LaTeX Font Warning: Font shape `OMS/cmss/m/n' undefined
 (Font)              using `OMS/cmsy/m/n' instead
-(Font)              for symbol `textbraceleft' on input line 999.
+(Font)              for symbol `textbraceleft' on input line 998.
 
 [27
 
@@ -917,15 +921,15 @@ LaTeX Font Warning: Font shape `OMS/cmss/m/n' undefined
 
  </Users/farkastallos/Library/TinyTeX/texmf-dist/tex/latex/beamer/beamericonarticle.pdf>]
 \tf@nav=\write6
-\openout6 = `SML_Final_Presentation.nav'.
+\openout6 = `SML_Final_Presentation_CW_FT.nav'.
 
 \tf@toc=\write7
-\openout7 = `SML_Final_Presentation.toc'.
+\openout7 = `SML_Final_Presentation_CW_FT.toc'.
 
 \tf@snm=\write8
-\openout8 = `SML_Final_Presentation.snm'.
+\openout8 = `SML_Final_Presentation_CW_FT.snm'.
 
- (./SML_Final_Presentation.aux)
+ (./SML_Final_Presentation_CW_FT.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2025-10-24>
@@ -934,19 +938,19 @@ L3 programming layer <2025-10-24>
 
 LaTeX Font Warning: Some font shapes were not available, defaults substituted.
 
-Package rerunfilecheck Info: File `SML_Final_Presentation.out' has not changed.
+Package rerunfilecheck Info: File `SML_Final_Presentation_CW_FT.out' has not changed.
 (rerunfilecheck)             Checksum: EFB26F49685B1150A920284EF5840AB3;1047.
  ) 
 Here is how much of TeX's memory you used:
  23355 strings out of 469519
- 459884 string characters out of 5468527
- 822070 words of memory out of 5000000
+ 460058 string characters out of 5468527
+ 823100 words of memory out of 5000000
  51466 multiletter control sequences out of 15000+600000
  643084 words of font info for 97 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 101i,15n,107p,480b,746s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 101i,15n,107p,486b,746s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cmextra/cmex9.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmss10.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmss12.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmss8.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmss9.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmssbx10.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmssi10.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmssi8.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmssi9.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt8.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt9.pfb>
-Output written on SML_Final_Presentation.pdf (29 pages, 2014859 bytes).
+Output written on SML_Final_Presentation_CW_FT.pdf (29 pages, 2014830 bytes).
 PDF statistics:
  459 PDF objects out of 1000 (max. 8388607)
  308 compressed objects within 4 object streams

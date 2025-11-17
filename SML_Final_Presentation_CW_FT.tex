@@ -542,7 +542,6 @@ Predicted 1   & 15       & 63       \\
 
 
 
-
 \subsection{Gradient Boosting Machine}
 %-------------------------------------------------------
 \begin{frame}{Gradient Boosting Machine (GBM)}
@@ -563,14 +562,15 @@ Predicted 1   & 15       & 63       \\
 \textbf{Tuned Hyperparameters (from Time-Series CV):}
 \begin{itemize}
      \item \texttt{shrinkage = 0.01} (The learning rate $\nu$): A small value provides \textbf{regularization}, forcing the model to learn "slowly".  This is ideal for noisy financial data, as it prevents overfitting and generally gives better results.
-        
-    \item \texttt{n.trees = 200} (The number of iterations $M$): This is the optimal stopping point found by CV.  It is directly balanced with the small shrinkage; a slow learner ($\nu=0.01$) requires more iterations ($M=200$) to fit the signal.
+       D
+    \item \texttt{n.trees = 300} (The number of iterations $M$): This is the optimal stopping point found by CV.  It is directly balanced with the small shrinkage; a slow learner ($\nu=0.01$) requires more iterations ($M=300$) to fit the signal.
         
     \item \texttt{interaction.depth = 1} (Tree size $J$): This was a key finding.  Our CV selected a "stump" (a tree with one split), which restricts the entire GBM to a purely \textbf{additive model}. This suggests the predictive signal in our data is best captured by main effects, not by complex interactions.
 \end{itemize}
 % --- [END OF MODIFIED SECTION] ---
 \end{frame}
 
+%-------------------------------------------------------
 %-------------------------------------------------------
 \begin{frame}{GBM: Out-of-Sample Performance and Importance}
 
@@ -584,10 +584,10 @@ Predicted 1   & 15       & 63       \\
 % --- FONT CHANGED ---
 \scriptsize{
 \begin{itemize}
-    \item Accuracy: \textbf{0.674}
-    \item AUC: \textbf{0.783}
-    \item Log-Loss: \textbf{0.5531}
-    \item Tuned Threshold: \textbf{0.6962} (via training ROC)
+    \item Accuracy: \textbf{0.698}
+    \item AUC: \textbf{0.786}
+    \item Log-Loss: \textbf{0.5449}
+    \item Tuned Threshold: \textbf{0.6091} (via training ROC)
 \end{itemize}
 }
 
@@ -598,10 +598,10 @@ Predicted 1   & 15       & 63       \\
 \begin{center}
 % --- This data is from your R output ---
 \begin{tabular}{c|cc}
-              & Actual 0 & Actual 1 \\
+        	& Actual 0 & Actual 1 \\
 \hline
-Predicted 0   & 33       & 31       \\
-Predicted 1   & 11       & 54       \\
+Predicted 0 & 30 	 & 25 	\\
+Predicted 1 & 14 	 & 60 	\\
 \end{tabular}
 \end{center}
 }
@@ -611,9 +611,9 @@ Predicted 1   & 11       & 54       \\
 % --- FONT CHANGED ---
 \scriptsize{
 \begin{itemize}
-    \item \textbf{Specificity}: $33 / (33 + 11) \approx \textbf{75\%}$
-    \item \textbf{Sensitivity}: $54 / (54 + 31) \approx \textbf{64\%}$
-    \item The additive GBM model shows a good balance, effectively capturing both "Up" and "Down" markets.
+    \item \textbf{Specificity}: $30 / (30 + 14) \approx \textbf{68\%}$
+    \item \textbf{Sensitivity}: $60 / (60 + 25) \approx \textbf{71\%}$
+    \item The additive GBM model shows a strong balance, with high sensitivity to "Up" markets and good specificity for "Down" markets.
 \end{itemize}
 }
 \end{column}
@@ -630,16 +630,15 @@ Predicted 1   & 11       & 54       \\
 % --- FONT CHANGED ---
 \scriptsize{
 \begin{itemize}
-    \item The model is \textbf{dominated} by a single predictor: \texttt{VIX\_change\_lag} (73.6\% relative influence).
+    \item The model is \textbf{dominated} by a single predictor: \texttt{VIX\_change\_lag} (\textbf{61.7\%} relative influence).
     \item The best-tuned model was additive (\texttt{interaction.depth = 1}), so it only finds main effects.
-    \item Other macro (\texttt{CPI\_lag}) and momentum (\texttt{lag3\_return}) features provide minor corrective adjustments to the main volatility signal.
+    \item Other macro (\texttt{CPI\_lag}) and momentum (\texttt{lag3\_return}, \texttt{lag1\_return}) features now provide a more meaningful corrective adjustment (6-7\% each).
 \end{itemize}
 }
 \end{column}
 
 \end{columns}
 \end{frame}
-
 
 
 
@@ -720,7 +719,7 @@ Predicted 1   & 11       & 54       \\
 
 \textbf{Final Model Decision:}
 \begin{itemize} \footnotesize
-    \item For a pure \textbf{risk-management} or probability model, the \textbf{Elastic Net} is the winner.
+    \item For a pure probability model, the \textbf{Elastic Net} is the winner.
     \item For a pure \textbf{trading strategy}, the \textbf{Random Forest} is the winner.
     \item This key insight - that the non-linear patterns (RF) were more profitable than the linear ones (ENet) - is the main finding of our analysis.
 \end{itemize}
@@ -760,7 +759,7 @@ Predicted 1   & 11       & 54       \\
     \begin{footnotesize} % Start even smaller font for the list
     \begin{itemize}
         \item All models performed significantly better than chance (all AUC greater than 0.75).
-        \item The linear \textbf{Elastic Net} had the highest Test AUC (0.790), narrowly beating the GBM (0.783).
+        \item The linear \textbf{Elastic Net} had the highest Test AUC (0.790), narrowly beating the GBM (0.786).
         \item The \textbf{Random Forest} had the highest Test Accuracy (0.713), but the lowest AUC.
         \item This suggests the regularized linear model was best at ranking probabilities, while the RF was best at classification after threshold tuning.
     \end{itemize}
@@ -916,7 +915,7 @@ Predicted 1   & 11       & 54       \\
     
     \vspace{-0.3cm} % <-- Optional: Add small negative space to pull text up
     \tiny
-    \textbf{Insight:} The probability of an "Up" month is highest (around 0.7) when the VIX has a small \textit{negative} change (slight calming). A large VIX spike (large positive change) dramatically \textit{decreases} the probability of an "Up" month.
+    \textbf{Insight:} The probability of an "Up" month is highest when the VIX has a small \textit{negative} change (slight calming). A large VIX spike (large positive change) dramatically \textit{decreases} the probability of an "Up" month.
   \end{column}
 
 % --- [MODIFIED COLUMN 2] ---
@@ -1027,7 +1026,7 @@ Predicted 1   & 11       & 54       \\
 
 \textbf{Gradient Boosting (GBM) Grid:}
 \begin{itemize}
-    \item \texttt{n.trees ($M$)}: \{100, 200, 300\}
+    \item \texttt{n.trees ($M$)}: \{100, 200, 300, 400\}
         \begin{itemize} \scriptsize % <-- Set nested list to scriptsize
             \item The number of boosting iterations (weak learners).
         \end{itemize}
@@ -1040,10 +1039,9 @@ Predicted 1   & 11       & 54       \\
             \item The learning rate. Tests a slow, regularized rate (0.01) vs. a faster, standard rate (0.1).
         \end{itemize}
 \end{itemize}
-\textit{Total combinations tested via Time-Series CV: 18}
+\textit{Total combinations tested via Time-Series CV: 24}
 
 \end{frame}
-
 
 
 

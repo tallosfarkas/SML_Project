@@ -727,7 +727,7 @@ library(foreach)
 
 # --- Parameter grid to tune for GBM ---
 param_grid_gbm <- expand.grid(
-  n.trees = c(100, 200, 300),
+  n.trees = c(100, 200, 300,400),
   interaction.depth = c(1, 2, 3), # As in slides07 (1=additive, >1=interactions) [cite: 1432]
   shrinkage = c(0.01, 0.1)      # Learning rate [cite: 1445]
 )
@@ -749,7 +749,7 @@ registerDoParallel(cl)
 
 set.seed(123)
 for (i in seq(window_size, n_train - horizon, by = horizon)) {
-  
+  set.seed(123)
   # Get window data (dataframes)
   train_window <- rf_train_df[1:i, ]
   test_window <- rf_train_df[(i + 1):(i + horizon), ]
@@ -773,7 +773,7 @@ for (i in seq(window_size, n_train - horizon, by = horizon)) {
     .combine = 'rbind', 
     .packages = c('gbm', 'pROC')
   ) %dopar% {
-    
+    set.seed(123)
     p <- param_grid_gbm[j, ]
     
     # Fit the gbm model
