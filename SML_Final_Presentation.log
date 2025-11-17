@@ -1,9 +1,9 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.28 (TeX Live 2025) (preloaded format=pdflatex 2025.11.9)  17 NOV 2025 21:55
+This is pdfTeX, Version 3.141592653-2.6-1.40.28 (TeX Live 2025) (preloaded format=pdflatex 2025.11.9)  17 NOV 2025 21:54
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
-**SML_Presentation_TEX.tex
-(./SML_Presentation_TEX.tex
+**SML_Final_Presentation.tex
+(./SML_Final_Presentation.tex
 LaTeX2e <2025-11-01>
 L3 programming layer <2025-10-24>
 (/Users/farkastallos/Library/TinyTeX/texmf-dist/tex/latex/beamer/beamer.cls
@@ -578,8 +578,8 @@ Package caption Info: Hyperref support is turned off
 ) (/Users/farkastallos/Library/TinyTeX/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
 File: l3backend-pdftex.def 2025-10-09 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count364
-) (./SML_Presentation_TEX.aux)
-\openout1 = `SML_Presentation_TEX.aux'.
+) (./SML_Final_Presentation.aux)
+\openout1 = `SML_Final_Presentation.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 76.
 LaTeX Font Info:    ... okay on input line 76.
@@ -641,9 +641,9 @@ Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 48
 File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Live
 ))
 Package hyperref Info: Link coloring OFF on input line 76.
- (./SML_Presentation_TEX.out) (./SML_Presentation_TEX.out)
+ (./SML_Final_Presentation.out) (./SML_Final_Presentation.out)
 \@outlinefile=\write5
-\openout5 = `SML_Presentation_TEX.out'.
+\openout5 = `SML_Final_Presentation.out'.
 
 LaTeX Font Info:    Overwriting symbol font `operators' in version `normal'
 (Font)                  OT1/cmr/m/n --> OT1/cmss/m/n on input line 76.
@@ -702,9 +702,9 @@ Dictionary: translator-theorem-dictionary, Language: English
 )
 Package caption Info: Begin \AtBeginDocument code.
 Package caption Info: End \AtBeginDocument code.
- (./SML_Presentation_TEX.nav) [1
+ (./SML_Final_Presentation.nav) [1
 
-{/Users/farkastallos/Library/TinyTeX/texmf-var/fonts/map/pdftex/updmap/pdftex.map}] (./SML_Presentation_TEX.toc) [2
+{/Users/farkastallos/Library/TinyTeX/texmf-var/fonts/map/pdftex/updmap/pdftex.map}] (./SML_Final_Presentation.toc) [2
 
 ] [3
 
@@ -917,15 +917,15 @@ LaTeX Font Warning: Font shape `OMS/cmss/m/n' undefined
 
  </Users/farkastallos/Library/TinyTeX/texmf-dist/tex/latex/beamer/beamericonarticle.pdf>]
 \tf@nav=\write6
-\openout6 = `SML_Presentation_TEX.nav'.
+\openout6 = `SML_Final_Presentation.nav'.
 
 \tf@toc=\write7
-\openout7 = `SML_Presentation_TEX.toc'.
+\openout7 = `SML_Final_Presentation.toc'.
 
 \tf@snm=\write8
-\openout8 = `SML_Presentation_TEX.snm'.
+\openout8 = `SML_Final_Presentation.snm'.
 
- (./SML_Presentation_TEX.aux)
+ (./SML_Final_Presentation.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2025-10-24>
@@ -934,19 +934,19 @@ L3 programming layer <2025-10-24>
 
 LaTeX Font Warning: Some font shapes were not available, defaults substituted.
 
-Package rerunfilecheck Info: File `SML_Presentation_TEX.out' has not changed.
+Package rerunfilecheck Info: File `SML_Final_Presentation.out' has not changed.
 (rerunfilecheck)             Checksum: EFB26F49685B1150A920284EF5840AB3;1047.
  ) 
 Here is how much of TeX's memory you used:
  23357 strings out of 469519
- 459861 string characters out of 5468527
- 822042 words of memory out of 5000000
+ 459919 string characters out of 5468527
+ 822052 words of memory out of 5000000
  51468 multiletter control sequences out of 15000+600000
  643084 words of font info for 97 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 101i,15n,107p,478b,746s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 101i,15n,107p,480b,746s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cmextra/cmex9.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmss10.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmss12.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmss8.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmss9.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmssbx10.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmssi10.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmssi8.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmssi9.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt8.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt9.pfb>
-Output written on SML_Presentation_TEX.pdf (29 pages, 2015091 bytes).
+Output written on SML_Final_Presentation.pdf (29 pages, 2015091 bytes).
 PDF statistics:
  459 PDF objects out of 1000 (max. 8388607)
  308 compressed objects within 4 object streams
