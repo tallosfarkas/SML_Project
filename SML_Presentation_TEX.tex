@@ -683,7 +683,7 @@ Predicted 1   & 11       & 54       \\
 \begin{itemize} \footnotesize
     \item For a pure \textbf{risk-management} or probability model, the \textbf{Elastic Net} is the winner.
     \item For a pure \textbf{trading strategy}, the \textbf{Random Forest} is the winner.
-    \item This key insight—that the non-linear patterns (RF) were more profitable than the linear ones (ENet)—is the main finding of our analysis.
+    \item This key insight - that the non-linear patterns (RF) were more profitable than the linear ones (ENet) - is the main finding of our analysis.
 \end{itemize}
 
 \end{frame}
@@ -823,6 +823,34 @@ Predicted 1   & 11       & 54       \\
   \item This suggests that while the Elastic Net was best at \textit{ranking} (AUC), the GBM produced the most \textit{accurate and well-calibrated probabilities}.
 \end{itemize}
 \end{frame}
+
+
+
+
+
+
+\begin{frame}
+\frametitle{Appendix: RF Interactions}
+\footnotesize
+
+
+\begin{itemize}  \tiny
+    \item Our key finding was that the non-linear RF model (Sharpe=1.696) was more profitable than the linear Elastic Net (Sharpe=1.058).
+    \item \textbf{Why?} The RF model captures \textit{interaction effects} that the additive ENet and GBM (J=1) models miss.
+\end{itemize}
+
+\begin{center}
+    % This is the plot you provided
+    \includegraphics[width=0.5\linewidth]{appendix_rf_interactions.png}
+\end{center}
+
+
+\begin{itemize} \tiny
+    \item This plot shows the 30 most frequent interactions. The strongest interactions are between \textbf{momentum} variables (e.g., \texttt{lag1\_return:lag3\_return}) and between \textbf{volatility and momentum} (e.g., \texttt{VIX\_change\_lag:lag1\_return}).
+    \item \textbf{Conclusion:} This proves the RF model is capturing complex, non-linear rules (e.g., the effect of momentum depends on the VIX). This non-linearity is the source of its superior trading performance.
+\end{itemize}
+\end{frame}
+
 
 
 

@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.28 (TeX Live 2025) (preloaded format=pdflatex 2025.11.9)  17 NOV 2025 15:55
+This is pdfTeX, Version 3.141592653-2.6-1.40.28 (TeX Live 2025) (preloaded format=pdflatex 2025.11.9)  17 NOV 2025 16:22
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -862,44 +862,56 @@ Overfull \vbox (63.02748pt too high) detected at line 825
 [22
 
 ]
-<appendix_pdp_vix.png, id=277, 501.875pt x 401.5pt>
+<appendix_rf_interactions.png, id=277, 1349.04pt x 963.6pt>
+File: appendix_rf_interactions.png Graphic file (type png)
+<use appendix_rf_interactions.png>
+Package pdftex.def Info: appendix_rf_interactions.png  used on input line 852.
+(pdftex.def)             Requested size: 216.67201pt x 154.75258pt.
+
+Overfull \vbox (2.35379pt too high) detected at line 852
+ []
+
+[23
+
+ <./appendix_rf_interactions.png>]
+<appendix_pdp_vix.png, id=286, 501.875pt x 401.5pt>
 File: appendix_pdp_vix.png Graphic file (type png)
 <use appendix_pdp_vix.png>
-Package pdftex.def Info: appendix_pdp_vix.png  used on input line 867.
+Package pdftex.def Info: appendix_pdp_vix.png  used on input line 895.
 (pdftex.def)             Requested size: 173.33826pt x 138.6708pt.
-<appendix_pdp_lag3.png, id=278, 501.875pt x 401.5pt>
+<appendix_pdp_lag3.png, id=287, 501.875pt x 401.5pt>
 File: appendix_pdp_lag3.png Graphic file (type png)
 <use appendix_pdp_lag3.png>
-Package pdftex.def Info: appendix_pdp_lag3.png  used on input line 867.
+Package pdftex.def Info: appendix_pdp_lag3.png  used on input line 895.
 (pdftex.def)             Requested size: 173.33826pt x 138.6708pt.
- [23
+ [24
 
  <./appendix_pdp_vix.png> <./appendix_pdp_lag3.png>]
-<appendix_gini_plot.png, id=288, 433.62pt x 361.35pt>
+<appendix_gini_plot.png, id=297, 433.62pt x 361.35pt>
 File: appendix_gini_plot.png Graphic file (type png)
 <use appendix_gini_plot.png>
-Package pdftex.def Info: appendix_gini_plot.png  used on input line 899.
+Package pdftex.def Info: appendix_gini_plot.png  used on input line 927.
 (pdftex.def)             Requested size: 173.33826pt x 144.44922pt.
 File: rf_minimal_depth.png Graphic file (type png)
 <use rf_minimal_depth.png>
-Package pdftex.def Info: rf_minimal_depth.png  used on input line 899.
+Package pdftex.def Info: rf_minimal_depth.png  used on input line 927.
 (pdftex.def)             Requested size: 195.00348pt x 139.28467pt.
- [24
+ [25
 
  <./appendix_gini_plot.png>]
-LaTeX Font Info:    Trying to load font information for OMS+cmss on input line 932.
-LaTeX Font Info:    No file OMScmss.fd. on input line 932.
+LaTeX Font Info:    Trying to load font information for OMS+cmss on input line 960.
+LaTeX Font Info:    No file OMScmss.fd. on input line 960.
 
 
 LaTeX Font Warning: Font shape `OMS/cmss/m/n' undefined
 (Font)              using `OMS/cmsy/m/n' instead
-(Font)              for symbol `textbraceleft' on input line 932.
+(Font)              for symbol `textbraceleft' on input line 960.
 
-[25
-
-] [26
+[26
 
 ] [27
+
+] [28
 
  </Users/farkastallos/Library/TinyTeX/texmf-dist/tex/latex/beamer/beamericonarticle.pdf>]
 \tf@nav=\write6
@@ -924,18 +936,18 @@ Package rerunfilecheck Info: File `SML_Presentation_TEX.out' has not changed.
 (rerunfilecheck)             Checksum: 6353B1E6BD60D304DC8E3DEED3388B7D;1047.
  ) 
 Here is how much of TeX's memory you used:
- 23341 strings out of 469519
- 459530 string characters out of 5468527
+ 23352 strings out of 469519
+ 459809 string characters out of 5468527
  823022 words of memory out of 5000000
- 51457 multiletter control sequences out of 15000+600000
+ 51466 multiletter control sequences out of 15000+600000
  643084 words of font info for 97 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  101i,15n,107p,478b,746s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cmextra/cmex9.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmss10.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmss12.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmss8.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmss9.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmssbx10.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmssi10.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmssi8.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmssi9.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt8.pfb></Users/farkastallos/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt9.pfb>
-Output written on SML_Presentation_TEX.pdf (27 pages, 1939934 bytes).
+Output written on SML_Presentation_TEX.pdf (28 pages, 2040409 bytes).
 PDF statistics:
- 439 PDF objects out of 1000 (max. 8388607)
- 295 compressed objects within 3 object streams
- 71 named destinations out of 1000 (max. 500000)
- 244 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 451 PDF objects out of 1000 (max. 8388607)
+ 302 compressed objects within 4 object streams
+ 73 named destinations out of 1000 (max. 500000)
+ 249 words of extra memory for PDF output out of 10000 (max. 10000000)
 
